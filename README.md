@@ -1,4 +1,4 @@
-# Vue-chat
+# Xiuxian-IM
 
 使用Vue实现一个仿微信pc版的前端项目.
 

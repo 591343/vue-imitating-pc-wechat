@@ -1,0 +1,157 @@
+<!-- 最左边的选择框 -->
+<template>
+  <div class="mycard">
+    <header>
+      <img :src="user.img" class="avatar">
+    </header>
+    <div class="navbar" @click="clearSearch">
+      <router-link to="/chat" class="icon iconfont icon-msg"></router-link>
+      <router-link to="/friend" class="icon iconfont icon-friend"></router-link>
+      <router-link to="/my" class="icon iconfont icon-collection"></router-link>
+    </div>
+    <footer>
+      <el-popover
+        popper-class="popoverBackB"
+        placement="right-end"
+        width="100"
+        trigger="click"
+        :visible-arrow=false>
+        <el-button class="mycardSetup" type="text" @click="loginOutDialogVisible = true">退出登录</el-button>
+        <br>
+        <el-button class="mycardSetup" type="text">设置</el-button>
+        <br>
+        <el-button class="mycardSetup" type="text">意见与反馈</el-button>
+        <br>
+        <i slot="reference" class="icon iconfont icon-more"></i>
+      </el-popover>
+
+    </footer>
+
+    <el-dialog
+
+      :visible.sync="loginOutDialogVisible"
+      :show-close="false"
+      width="30%"
+      center>
+      <span style="font-size: 16px;color: black">退出登陆后将无法收到新信息,确定退出登录？</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="success" size="small" @click="loginOut">确 定</el-button>
+        <el-button size="small" @click="loginOutDialogVisible = false">取 消</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import {mapMutations, mapState} from 'vuex'
+import {searchUser} from '../../apis/search.api'
+import {loginOut} from '../../apis/login.api'
+export default {
+  computed: {
+    ...mapState([
+      'user',
+      'userName'
+    ])
+  },
+  data() {
+    return {
+      visible: false,
+      loginOutDialogVisible: false
+    }
+  },
+  methods: {
+    ...mapMutations([
+      'delToken',
+    ]),
+    clearSearch() {
+      this.$store.dispatch('search', '')
+    },
+
+    loginOut() {
+      this.loginOutDialogVisible = false
+
+      //设置token过期
+      searchUser(this.userName).then((res)=>{
+        let data = res.data.data;
+        if(data!=null){
+          let userId=data.id
+          loginOut(userId).then((res)=>{
+            this.$notify({
+              title: "退登成功",
+              type: "success",
+              showClose: false,
+              duration: 1000
+            });
+            //清空localstorage和vue中的token
+            this.delToken()
+            setTimeout(() => {
+              // 此时要判断/login后面的参数redirect，若无参数，进入主页;
+
+              this.$router.push("/login");
+              // 若有参数则参数为未有权限的那个路由，跳转到那个路由
+              // this.$router.push(***); -- 具体要自己在这实现
+            }, 1000);
+          })
+        }
+      })
+    }
+  }
+}
+</script>
+
+<style lang="stylus">
+@import '../../assets/fonts/iconfont.css'
+.mycard
+  position: relative
+  width: 100%
+  height: 100%
+
+  .avatar
+    width: 36px
+    height: 36px
+    margin: 20px 12px 0 12px
+    border-radius: 2px
+
+  .navbar
+    width: 100%
+    text-align: center
+
+  .icon
+    display: inline-block
+    font-size: 26px
+    margin-top: 28px
+    padding: 0 16px
+    box-sizing: border-box
+    color: rgb(173, 174, 175)
+    opacity: 0.8
+    cursor: pointer
+
+    &.active
+      color: rgb(0, 220, 65)
+
+    &:hover
+      opacity: 1;
+
+  .icon-msg, .icon-more
+    font-size: 22px
+
+  .icon-msg
+    padding: 0 19px
+
+footer
+  position: absolute
+  bottom: 20px
+  width: 100%
+  text-align: center
+
+.el-popover.popoverBackB {
+  background-color: #2b2c2f;
+}
+
+.mycardSetup {
+  font-size: 14px
+  color: gray
+}
+
+
+</style>

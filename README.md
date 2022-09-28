@@ -1,6 +1,6 @@
-# Vue-chat
+# Xiuxian-IM
 
-使用Vue.js实现一个仿微信pc版的小demo.
+使用Vue实现一个仿微信pc版的前端项目.
 
 ## Build Setup
 

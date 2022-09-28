@@ -6,18 +6,32 @@ import request from "../services/request";  // 前面封装的request
 
 export function getFriendList(selfXiuxianId){
   return request({
-    url: '/xiuxian-chat/api/xiuxianchatlist/friendlist',
+    url: '/xiuxian-chat/api/xiuxianfriendlist/friendlist',
     method: 'get',
     params:{
       // 具体传参（键）要看后台要求
       "selfXiuxianId":selfXiuxianId,
+    }
+  })
+}
+
+
+//获取单个friendList
+export function getFriendListItem(selfXiuxianId,friendXiuxianId){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriendlist/friendlistitem',
+    method: 'get',
+    params:{
+      // 具体传参（键）要看后台要求
+      "selfXiuxianId":selfXiuxianId,
+      "friendXiuxianId":friendXiuxianId
     }
   })
 }
 
 export function getGroupList(selfXiuxianId){
   return request({
-    url: '/xiuxian-chat/api/xiuxianchatlist/grouplist',
+    url: '/xiuxian-chat/api/xiuxianfriendlist/grouplist',
     method: 'get',
     params:{
       // 具体传参（键）要看后台要求
@@ -25,5 +39,33 @@ export function getGroupList(selfXiuxianId){
     }
   })
 }
+export function getFriendsByFromIdAndToId(fromId,toId){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriend/isfriends',
+    method: 'get',
+    params:{
+      // 具体传参（键）要看后台要求
+      "fromId":fromId,
+      "toId":toId
+    }
+  })
+}
 
+export function sendAddFriend(addFriend){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriend/addfriend',
+    method: 'post',
+    data:addFriend
+  })
+}
+
+
+//接收添加好友申请
+export function acceptFriend(acceptFriendData){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriend/acceptfriend',
+    method: 'post',
+    data:acceptFriendData
+  })
+}
 

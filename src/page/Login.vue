@@ -82,11 +82,7 @@ export default {
       this.checked = true
     }
     disconnect()
-    let s="酒"
-    let regExp = new RegExp("\\["+s+"\\]","g")
-    let str="[酒]上的蔷薇科就[吃饭]"
-    let s1 = str.replace(regExp,"表情");
-    console.log('正则替换：',regExp,s1)
+
   },
   methods: {
     ...mapMutations([

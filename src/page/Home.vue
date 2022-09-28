@@ -78,7 +78,7 @@ export default {
   },
 
   mounted() {
-    connect()//获取朋友列表完成后进行订阅
+
   },
   methods: {
     ...mapMutations([

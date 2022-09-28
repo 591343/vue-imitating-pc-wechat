@@ -25,6 +25,7 @@
         </div>
         <div class="area"><span>地&nbsp&nbsp&nbsp区</span>{{ selectedFriend.area }}</div>
         <div class="wxid"><span>微信号</span>{{ selectedFriend.friendXiuxianId }}</div>
+        <div class="permission" v-show="selectedFriend.permission===1"><span>朋友权限</span>仅聊天</div>
       </div>
       <div class="send" @click="send">
         <span>发消息</span>
@@ -49,7 +50,7 @@
         <div class="area" v-model="friend.area"><span>地&nbsp&nbsp&nbsp区</span>{{ friend.area }}</div>
         <div class="wxid" v-model="friend.xiuxianId"><span>修仙号</span>{{ friend.xiuxianId }}</div>
       </div>
-      <div class="send" @click="addFriend">
+      <div class="send" @click="openAddFriendDialog">
         <span>添加到通讯录</span>
       </div>
     </div>
@@ -57,37 +58,39 @@
     <el-dialog
       title="申请添加朋友"
       :visible.sync="dialogVisible"
-      width="25%"
+      width="300px"
       :show-close="false"
       :modal="false"
       class="add-friend-dialog"
       center>
       <span class="input-name">发送添加朋友申请</span>
       <el-input
+        v-model="form.introduce"
         placeholder="请输入内容"
         clearable
-        style="margin-top: 10px;margin-bottom: 10px">
+        style="margin-top: 10px;margin-bottom: 10px" >
       </el-input>
       <span class="input-name">备注名</span>
       <el-input
+        v-model="form.remark"
         placeholder="备注名"
         clearable
-        style="margin-top: 10px;margin-bottom: 10px">
+        style="margin-top: 10px;margin-bottom: 10px" >
       </el-input>
       <span class="input-name">设置朋友权限</span>
       <div class="permission">
-        <el-radio-group v-model="form.radio1"  style="width:100%;margin-top: 10px;margin-bottom: 10px" fill="#1aad19" >
+        <el-radio-group v-model="form.permission"  style="width:100%;margin-top: 10px;margin-bottom: 10px" fill="#1aad19" >
           <div class="friend-permission">
-            <el-radio-button class="friend-permission-button" label="1" >聊天、朋友圈、修仙运动</el-radio-button>
+            <el-radio-button class="friend-permission-button" label="0" >聊天、朋友圈、修仙运动</el-radio-button>
           </div>
           <div class="friend-permission">
-            <el-radio-button  class="friend-permission-button" label="2">仅聊天</el-radio-button>
+            <el-radio-button  class="friend-permission-button" label="1">仅聊天</el-radio-button>
           </div>
         </el-radio-group>
       </div>
 
       <span slot="footer" class="dialog-footer">
-        <el-button type="success" @click="dialogVisible = false" size="medium">确 定</el-button>
+        <el-button type="success" @click="addFriend" size="medium">确 定</el-button>
         <el-button @click="dialogVisible = false" size="medium">取 消</el-button>
       </span>
     </el-dialog>
@@ -97,10 +100,11 @@
 </template>
 
 <script>
-import router from '../../router'
+
 import {mapActions, mapGetters, mapState} from 'vuex'
 import {searchFriend} from "../../apis/search.api";
-
+import {sendAddFriend} from "../../apis/friend.api";
+import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/constant";
 export default {
   name: "friendinfo",
   data() {
@@ -111,7 +115,9 @@ export default {
       group: {},
       dialogVisible: false,
       form:{
-        radio1: '上海',
+        introduce: "我是",
+        remark:'',
+        permission: '0',
       }
     }
   },
@@ -127,6 +133,9 @@ export default {
       'friendlist'
     ]),
   },
+  mounted() {
+    this.form.introduce='我是'+this.user.nickname
+  },
   methods: {
     ...mapActions([
       'selectFriend',
@@ -134,13 +143,32 @@ export default {
     send() {
       this.$store.dispatch('send')
       this.$store.dispatch('search', '')
-
+    },
+    openAddFriendDialog(){
+      this.dialogVisible=true
+      this.form.remark=this.friend.nickname
     },
     //添加朋友到通讯录
     addFriend() {
-      this.dialogVisible = true
+      this.dialogVisible=false
+      let addFriend={
+        noticeMessageVo:{
+          fromId:this.user.xiuxianUserId,
+          toId:this.friend.xiuxianId,
+          noticeMessageType:ADD_FRIEND_NOTICE,
+          noticeTime:new Date().getTime(),
+          status:WAITING_FOR_RECEIVE_STATUS,
+          content:this.form.introduce,
+        },
+        remark:this.form.remark,
+        permission:parseInt(this.form.permission)
+      }
+      sendAddFriend(addFriend).then((res)=>{
+        console.log('添加好友通知消息已发送')
+      }).catch(error=>{
+        this.$message.error(error)
+      })
     },
-
     getFriendInfo() {
       if (this.selectFriendId === -1) {
         if (this.searchText !== '') {
@@ -254,7 +282,7 @@ export default {
   border-top: 1px solid #e7e7e7
   border-bottom: 1px solid #e7e7e7
 
-  .remark, .area, .wxid
+  .remark, .area, .wxid, .permission
     font-size: 14px
     margin-top: 20px
 
@@ -300,9 +328,8 @@ export default {
 .permission
   .friend-permission
     .friend-permission-button
-
       .el-radio-button__inner
-        width:293px
+        width:250px
         color:black
 
 

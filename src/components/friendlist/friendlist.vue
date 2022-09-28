@@ -99,6 +99,7 @@ export default {
     new_friend(){
       this.newFriendActive=true
       this.selectFriend(-1)
+      this.$router.push("/newFriendInfo")
     }
 
 

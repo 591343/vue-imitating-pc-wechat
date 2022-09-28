@@ -4,19 +4,27 @@ import Stomp from "stompjs";
 import store from "../store";
 //搜索相关的api
 import request from "../services/request";  // 前面封装的request
-import {updateChatMessageToTimeById} from "./chat.api";
-import {addChatList,sendPing} from "./chat.api";
+import {getChatListItem, updateChatMessageToTimeById} from "./chat.api";
+import {addChatList, sendPing} from "./chat.api";
 import router from "../router";
+import {
+  ADD_FRIEND_NOTICE,
+  ADD_FRIEND_SUCCESS_NOTICE,
+  SEND_MESSAGE_NOTICE,
+  WAITING_FOR_RECEIVE_STATUS
+} from "../services/constant";
+import {searchFriend} from "./search.api";
+import {getFriendListItem} from "./friend.api";
 
 
-let stompClient=null
+let stompClient = null
 let tryTimes = 0;//重连次数
 
 export function connect() {
   console.log('CONNECT>>>')
   let url = request.getUri() + "/xiuxian-websocket/ws" + "?token=" + store.getters.getToken
-  let socket = new SockJS(url,null,{
-    timeout:10000
+  let socket = new SockJS(url, null, {
+    timeout: 10000
   });//连接SockJS的endpoint名称为"bullet"
 
   console.log('socket连接地址：' + url);
@@ -31,8 +39,95 @@ export function connect() {
     tryTimes = 0;//重置重连次数
     console.log('connect')
     //订阅(该路由专门用于心跳检测）
-    stompClient.subscribe('/user/' + store.getters.getUser.xiuxianUserId+'/heartbeat' , (response) => {
+    stompClient.subscribe('/user/' + store.getters.getUser.xiuxianUserId + '/heartbeat', (response) => {
       heartCheck.reset().start(); //心跳检测重置
+    });
+
+    // 用户通知消息
+    stompClient.subscribe('/user/' + store.getters.getUser.xiuxianUserId + '/notice', (response) => {
+      const body = JSON.parse(response.body);
+      const noticeMessageType = body.noticeMessageType
+      const status = body.status
+      const fromId = body.fromId
+      const toId = body.toId
+      switch (noticeMessageType) {
+        //添加好友通知
+        case ADD_FRIEND_NOTICE:
+          switch (status) {
+            case WAITING_FOR_RECEIVE_STATUS:
+              searchFriend(fromId).then(res => {
+                let data = res.data.data
+                let find = store.state.newFriendList.find(newFriend => newFriend.xiuxianUserId === data.xiuxianUserId)
+
+                //对于刚好处于新的朋友页面时
+                if (find === undefined) {
+                  store.state.newFriendList.push({
+                    id: body.id,
+                    fromId: fromId,
+                    nickname: data.nickname,
+                    profile: data.profile,
+                    status: status,
+                    noticeTime: body.noticeTime + "",
+                    messages: [
+                      {
+                        content: body.content,
+                        date: body.noticeTime + "",
+                        self: false
+                      }
+                    ]
+                  })
+                  console.log('newFriendList', store.state.newFriendList)
+                }
+              }).catch(error => {
+                  console.log(error)
+                }
+              )
+          }
+
+          // TODO 提醒用户
+          break;
+        case SEND_MESSAGE_NOTICE:  //消息验证通知
+          let find = store.state.newFriendList.find(newFriend => newFriend.fromId === fromId)
+          console.log(store.state.newFriendList,fromId,find)
+          if (find !== undefined) {
+            find.messages.push({
+              content: body.content,
+              date: body.noticeTime + "",
+              self: false
+            })
+            find.messages.sort((a, b) => b.date - a.date)
+          }
+
+          // TODO 提醒用户
+          break;
+        case ADD_FRIEND_SUCCESS_NOTICE: //添加好友申请成功通知
+          getFriendListItem(toId,fromId).then(res=>{
+            if(res.data.data!==null){
+              let friendListItem=res.data.data
+              store.state.friendlist.push(friendListItem)
+              getChatListItem(toId,fromId).then(res=>{
+                if(!res.data.data) return
+                const chatListItem=res.data.data
+
+                let result = store.state.chatlist.find(session => session.friendXiuxianId === fromId);
+                //还没添加到聊天列表中,但是对方给我发消息了，先把对方加入聊天列表中
+
+                if (!result) {
+                  for (let i = 0; i < store.state.chatlist.length; i++) {
+                    store.state.chatlist[i].index++;
+                  }
+                  store.state.chatlist.unshift(chatListItem)
+                  store.state.selectId = fromId
+                  router.push({path: '/chat'})
+                }
+              })
+
+            }
+          })
+          // TODO 提醒用户
+          break;
+
+      }
     });
 
 
@@ -240,6 +335,8 @@ function reconnect() {
 export function disconnect() {
   if (stompClient !== null) {
     stompClient.disconnect();
+
+    stompClient = null;
   }
   //断开连接成功之后的操作...
 }
@@ -259,7 +356,8 @@ var heartCheck = {
     this.timeoutObj = setTimeout(function () {
       //这里发送一个心跳到后端指定路由，后端该路径收到将再发一条消息到前端指定路由，从而完成一次交互（消息content可以为空 只要能到达路由就可以）
       sendPing({
-        'fromId':store.getters.getUser.xiuxianUserId})
+        'fromId': store.getters.getUser.xiuxianUserId
+      })
 
 
       //如果超过一定时间还没重置才会执行到这，说明后端主动断开了

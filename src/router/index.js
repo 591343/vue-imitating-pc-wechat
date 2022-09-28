@@ -55,6 +55,11 @@ export const moduleRoutes = [
           path: '/groupInfo',
           name: 'GroupInfo',
           component: require('@/page/info/GroupInfo.vue')
+        },
+        {
+          path: '/newFriendInfo',
+          name: 'NewFriendInfo',
+          component: require('@/page/info/NewFriendInfo.vue')
         }
       ]
     },

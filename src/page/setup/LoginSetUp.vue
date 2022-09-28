@@ -107,7 +107,7 @@ export default {
             trigger: "blur"
           },
           {max: 20, message: "不能大于20个字符", trigger: "blur"},
-          {min: 6,message: "不能小于8个字符",trigger: "blur"},
+          {min: 8,message: "不能小于8个字符",trigger: "blur"},
           {validator: validateUnique, trigger: 'blur'}
         ],
         nickname: [
@@ -121,7 +121,7 @@ export default {
         signature: [
           {required: true, message: "请输入个性签名", trigger: "blur"},
           {
-            pattern: '^[a-zA-Z0-9_\\u4e00-\\u9fa5]+$',
+            pattern: '^[a-zA-Z0-9_\s\\u4e00-\\u9fa5]+$',
             message: "只能输入汉字、数字、字母、下划线.",
             trigger: "blur"
           },

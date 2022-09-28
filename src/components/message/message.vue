@@ -13,7 +13,7 @@
           <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
           <div class="main" :class="{ self: item.self }">
             <img class="avatar" width="36" height="36" :src="item.self ? user.img : selectedChat.profile"/>
-            <div class="content"  v-if="item.chatMessageType===0&&item.content!==''">
+            <div class="content" v-if="item.chatMessageType===0&&item.content!==''">
               <div class="text" v-html="replaceFace(item.content)"></div>
             </div>
             <div class="imgContent" v-else>
@@ -34,7 +34,7 @@
           <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
 
           <div class="main" :class="{ self: item.self }">
-            <div class="name">{{item.chatUser| showName}}</div>
+            <div class="name">{{ item.chatUser| showName }}</div>
             <img class="avatar" width="36" height="36" :src="item.self ? user.img : item.chatUser.profile"/>
 
             <div class="content" v-if="item.chatMessageType===0&&item.content!==''">
@@ -86,10 +86,10 @@ export default {
     //  再经过v-html 渲染成真正的图片
     replaceFace(con) {
 
-      if (con.includes("[")) {
+      if (con.match(/\[.*?\]/g) != null) {
         var emojis = this.emojis;
         for (var i = 0; i < emojis.length; i++) {
-          let regExp = new RegExp("\\["+emojis[i].title+"\\]","g");
+          let regExp = new RegExp("\\[" + emojis[i].title + "\\]", "g");
           con = con.replace(regExp, '<img src="static/emoji/' + emojis[i].file + '"  alt="" style="vertical-align: middle; width: 24px; height: 24px" />');
         }
         return con;
@@ -131,7 +131,7 @@ export default {
 
     //格式化用户昵称
     showName(chatUser) {
-      if(chatUser.remark!==null&&chatUser.remark!==''){
+      if (chatUser.remark !== null && chatUser.remark !== '') {
         return chatUser.remark
       }
       return chatUser.nickname
@@ -183,10 +183,11 @@ export default {
     .main
       .name
 
-        font-size:10px
+        font-size: 10px
         color #adaeaf
-        margin-left:15px
+        margin-left: 15px
         margin-bottom 3px
+
       .avatar
         float: left
         margin-left: 15px
@@ -227,8 +228,9 @@ export default {
       text-align: right
 
       .name
-        margin-right:  15px
+        margin-right: 15px
         margin-bottom: 3px
+
       .avatar
         float: right
         margin: 0 15px

@@ -15,6 +15,18 @@ export function getChatList(selfXiuxianId){
   })
 }
 
+export function getChatListItem(selfXiuxianId,friendXiuxianId){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianchatlist/chatlistitem',
+    method: 'get',
+    params:{
+      // 具体传参（键）要看后台要求
+      "selfXiuxianId":selfXiuxianId,
+      "friendXiuxianId":friendXiuxianId
+    }
+  })
+}
+
 export function addChatList(chatList){
   return request({
     url: '/xiuxian-chat/api/xiuxianchalist/chatlist',

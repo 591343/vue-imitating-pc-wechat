@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "child_process": "^1.0.2",
     "element-china-area-data": "^5.0.2",
     "element-ui": "^2.15.9",
+    "fs": "0.0.1-security",
     "js-web-screen-shot": "^1.7.3",
     "net": "^1.0.2",
     "sockjs-client": "^1.6.1",

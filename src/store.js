@@ -4,7 +4,6 @@ import router from './router'
 import storage from "./utils/storage";
 import {addChatList, sendSingleChat, sendGroupChat} from "./apis/chat.api";
 
-import {dateFormat} from "./services/utils";
 
 Vue.use(Vuex)
 
@@ -26,6 +25,9 @@ const state = {
   chatlist: [],
   // 好友列表
   friendlist: [],
+
+  // 新的朋友列表
+  newFriendList: [],
 
   //emoji表情
   emojis: [
@@ -83,7 +85,10 @@ const state = {
   // 得知当前选择的是哪个对话
   selectId: '',
   // 得知当前选择的是哪个好友 为-1是要查找好友或群组 ,为0时是新的朋友,大于0则是其它好友
-  selectFriendId: 0
+  selectFriendId: 0,
+
+  // 得知当前选择的是哪个待验证好友Id
+  selectValidId: '',
 }
 
 const mutations = {
@@ -124,6 +129,10 @@ const mutations = {
   // 得知用户当前选择的是哪个好友。
   selectFriend(state, value) {
     state.selectFriendId = value
+  },
+
+  selectValidId(state, value) {
+    state.selectValidId = value
   },
 
   // 发送信息
@@ -273,6 +282,10 @@ const mutations = {
 
     state.friendlist = friendList
   },
+  setNewFriendList(state, newFriendList) {
+
+    state.newFriendList = newFriendList
+  },
 
 }
 const getters = {
@@ -330,6 +343,11 @@ const getters = {
     }
     return friend
   },
+
+  selectValidFriend(state) {
+    let friend = state.newFriendList.find(friend => friend.fromId === state.selectValidId);
+    return friend
+  },
   // 根据修仙Id去在朋友列表中找到该朋友
 
   messages(state) {
@@ -338,6 +356,9 @@ const getters = {
   },
   getUser(state) {
     return state.user
+  },
+  getNewFriendList(state) {
+    return state.newFriendList
   }
 }
 

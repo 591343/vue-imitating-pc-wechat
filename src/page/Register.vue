@@ -75,7 +75,8 @@ export default {
         password: [
           {required: true, message: "请输入密码", trigger: "blur"},
           {max: 15, message: "不能大于15个字符", trigger: "blur"},
-          {min: 8,message: "不能小于8个字符",trigger: "blur"}
+          {min: 8,message: "不能小于8个字符",trigger: "blur"},
+          {pattern:'^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,16}$',message: "密码必须是数字和字母的组合",trigger: "blur"}
         ],
         rePassword: [
           {required: true, message: "请再次输入密码", trigger: "blur"},

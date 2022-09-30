@@ -182,8 +182,6 @@ export function connect() {
           store.state.selectId = repObj.fromId
           router.push({path: '/chat'})
         } else {
-
-
           if (repObj.chatMessageType === 0) {
             result.messages.push({
               content: repObj.content,
@@ -201,7 +199,13 @@ export function connect() {
               self: false
             });
           }
+
           result.messages.sort((a, b) => a.date - b.date)
+          //按消息时间从大到小排列chatlist
+          store.state.chatlist.sort((a,b)=>b.messages[b.messages.length-1].date-a.messages[a.messages.length-1].date)
+          for (let i = 0; i < store.state.chatlist.length; i++) {
+            store.state.chatlist[i].index=i+1;
+          }
         }
 
         const id = repObj.id; //消息id
@@ -294,7 +298,12 @@ export function connect() {
                 self: false
               });
             }
+            //按消息时间从大到小排列chatlist
             result.messages.sort((a, b) => a.date - b.date)
+            store.state.chatlist.sort((a,b)=>b.messages[b.messages.length-1].date-a.messages[a.messages.length-1].date)
+            for (let i = 0; i < store.state.chatlist.length; i++) {
+              store.state.chatlist[i].index=i+1;
+            }
           }
 
           const id = repObj.id; //消息id

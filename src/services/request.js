@@ -50,8 +50,8 @@ service.interceptors.response.use(
           path: '/login',
           // 将跳转的路由path作为参数，登录成功后跳转到该路由
           query: {redirect: router.currentRoute.fullPath}
-        });
-        this.$message.error('登录过期,请重新登录')
+          });
+      this.$message.error('登录过期,请重新登录')
         break;
       case 10020:
         router.replace({ //跳转到登录页面
@@ -64,15 +64,18 @@ service.interceptors.response.use(
       default:
         return Promise.reject(response.data.msg)
     }
-
   },
   error => {
     // 在status不为200的情况下，判别status状态码给出对应响应
     console.log("拦截到错误", error)
 
-    switch (error.status){
+    switch (error.response.status){
       case 0:
         return Promise.reject("请求超时,请重新请求");
+      case 403:
+        return Promise.reject("输入数据不合法,请重新输入");
+      default:
+        return Promise.reject(error.message)
     }
 
   }

@@ -70,4 +70,15 @@ export function sendPing(data){
   })
 }
 
+//删除聊天
+export function deleteChatListItemRes(data){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianchalist/delete/chatlistitem',
+    method: 'post',
+    data:{
+      "selfXiuxianId":data.selfXiuxianId,
+      "friendXiuxianId":data.friendXiuxianId
+    }
+  })
+}
 

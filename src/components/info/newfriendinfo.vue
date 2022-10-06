@@ -207,7 +207,6 @@ export default {
       this.form.introduce="我是"+this.getUser.nickname
     },
     selectNewFriend(xiuxianUserId) {
-      // TODO 制作点击li要展示的信息,
       const fromId = this.getUser.xiuxianUserId
       getFriendsByFromIdAndToId(fromId, xiuxianUserId).then(res => {
         if (res.data.data) {
@@ -298,7 +297,6 @@ export default {
 
     //接受添加好友请求
     accept() {
-      // TODO 1.添加friends并修改对方的frineds类型，2.修改双方添加好友通知状态为已添加 3.唤醒双方聊天窗口或者通知提示
       this.friendSetUpDialogVisible=false
       const noticeMessage={
         id:this.selectValidFriend.id,

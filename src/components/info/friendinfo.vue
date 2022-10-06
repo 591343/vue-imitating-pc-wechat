@@ -103,8 +103,10 @@
 
 import {mapActions, mapGetters, mapState} from 'vuex'
 import {searchFriend} from "../../apis/search.api";
-import {sendAddFriend} from "../../apis/friend.api";
+import {getFriendListItem, getFriendsByFromIdAndToId, sendAddFriend} from "../../apis/friend.api";
 import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/constant";
+import {getChatListItem} from "../../apis/chat.api";
+import store from "../../store";
 export default {
   name: "friendinfo",
   data() {
@@ -163,11 +165,45 @@ export default {
         remark:this.form.remark,
         permission:parseInt(this.form.permission)
       }
-      sendAddFriend(addFriend).then((res)=>{
-        console.log('添加好友通知消息已发送')
-      }).catch(error=>{
-        this.$message.error(error)
+
+      //先判断一下对方有没有删除自己
+      getFriendsByFromIdAndToId(this.friend.xiuxianId,this.user.xiuxianUserId).then((res)=>{
+        if(res.data.data!=null){
+          const isFriends=res.data.data
+          sendAddFriend(addFriend).then((res)=>{
+            if(isFriends) {
+              getFriendListItem(this.user.xiuxianUserId,this.friend.xiuxianId).then(res=>{
+                if(res.data.data!=null){
+                  let friendListItem=res.data.data
+                  this.friendlist.push(friendListItem)
+                  //接受成功跳转到好友信息页面
+                  this.selectFriend(this.friend.xiuxianId)
+                  this.$router.push("/friendInfo")
+                }
+              })
+              getChatListItem(this.user.xiuxianUserId,this.friend.xiuxianId).then(res=>{
+                if(!res.data.data) return
+                const chatListItem=res.data.data
+
+                let result = store.state.chatlist.find(session => session.friendXiuxianId === this.friend.xiuxianUserId);
+                //还没添加到聊天列表中,但是对方给我发消息了，先把对方加入聊天列表中
+
+                if (!result) {
+                  for (let i = 0; i < store.state.chatlist.length; i++) {
+                    store.state.chatlist[i].index++;
+                  }
+                  store.state.chatlist.unshift(chatListItem)
+                }
+              })
+            }
+            this.$message.info("已发送")
+          }).catch(error=>{
+            this.$message.error(error)
+          })
+
+        }
       })
+
     },
     getFriendInfo() {
       if (this.selectFriendId === -1) {

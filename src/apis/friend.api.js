@@ -69,3 +69,12 @@ export function acceptFriend(acceptFriendData){
   })
 }
 
+//删除朋友
+export function deleteFriendApi(friendListItemRel){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriend/deletefriend',
+    method: 'post',
+    data:friendListItemRel
+  })
+}
+

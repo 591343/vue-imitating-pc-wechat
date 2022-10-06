@@ -29,7 +29,7 @@ service.interceptors.request.use(
     return config;
   },
   error => {
-    console.log("在request拦截器显示错误：", error.response)
+    console.log("在request拦截器显示错误：", error.message)
     return Promise.reject(error);
   }
 );

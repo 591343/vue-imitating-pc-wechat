@@ -2,7 +2,17 @@
 <template>
   <div class="mycard">
     <header>
-      <img :src="user.img" class="avatar">
+      <el-popover
+        placement="right-end"
+        width="200"
+        trigger="click"
+        :visible-arrow="false"
+        >
+        <delivery-info></delivery-info>
+        <img :src="user.img" class="avatar" slot="reference">
+
+      </el-popover>
+
     </header>
     <div class="navbar" @click="clearSearch">
       <router-link to="/chat" class="icon iconfont icon-msg"></router-link>
@@ -16,7 +26,7 @@
         width="100"
         trigger="click"
         :visible-arrow=false>
-        <el-button class="mycardSetup" type="text" @click="loginOutDialogVisible = true">退出登录</el-button>
+        <el-button class="mycardSetup" type="text" @click="loginOut">退出登录</el-button>
         <br>
         <el-button class="mycardSetup" type="text">设置</el-button>
         <br>
@@ -26,27 +36,20 @@
       </el-popover>
 
     </footer>
-
-    <el-dialog
-
-      :visible.sync="loginOutDialogVisible"
-      :show-close="false"
-      width="30%"
-      center>
-      <span style="font-size: 16px;color: black">退出登陆后将无法收到新信息,确定退出登录？</span>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="success" size="small" @click="loginOut">确 定</el-button>
-        <el-button size="small" @click="loginOutDialogVisible = false">取 消</el-button>
-      </span>
-    </el-dialog>
   </div>
+
 </template>
 
 <script>
 import {mapMutations, mapState} from 'vuex'
 import {searchUser} from '../../apis/search.api'
 import {loginOut} from '../../apis/login.api'
+import deliveryinfo from "../info/deliveryinfo";
+
 export default {
+  components: {
+    "delivery-info":deliveryinfo
+  },
   computed: {
     ...mapState([
       'user',
@@ -146,6 +149,7 @@ footer
 
 .el-popover.popoverBackB {
   background-color: #2b2c2f;
+  min-width :50px
 }
 
 .mycardSetup {

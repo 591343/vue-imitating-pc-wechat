@@ -27,7 +27,8 @@
           <div class="remark">新的朋友</div>
         </div>
       </li>
-      <li v-for="item in searchedFriendlist" class="frienditem" :class="{ noborder: !item.initial}">
+      <li v-for="item in searchedFriendlist" class="frienditem" :class="{ noborder: !item.initial}"
+          @contextmenu.prevent="rightClick($event,item.friendXiuxianId)">
         <div class="list_title" v-if="item.initial">{{ item.initial }}</div>
         <div class="friend-info" :class="{ active: item.friendXiuxianId === selectFriendId }"
              @click="router_to_friend_info1(item.friendXiuxianId,item.type)">
@@ -38,11 +39,19 @@
         </div>
       </li>
     </ul>
+
+    <div v-show="menuVisible">
+      <ul id="menu" class="menu">
+        <li class="menu_item" style="border-bottom: 1px solid #d1d1d1;" @click="">发消息</li>
+        <li class="menu_item"  @click="deleteFriend">删除朋友</li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
 import {mapState, mapActions, mapGetters} from 'vuex'
+import {deleteFriendApi} from "../../apis/friend.api";
 
 export default {
 
@@ -54,15 +63,20 @@ export default {
       searchFriendActive: false,
       searchGroupActive: false,
       newFriendActive:false,
+      menuVisible: false,
+      selectedFriendXiuxianId:'',
     }
   },
   computed: {
     ...mapState([
       'selectFriendId',
-      'searchText'
+      'searchText',
+      'chatlist',
+      'friendlist'
     ]),
     ...mapGetters([
-      'searchedFriendlist'
+      'searchedFriendlist',
+      'getUser'
     ])
   },
 
@@ -100,8 +114,60 @@ export default {
       this.newFriendActive=true
       this.selectFriend(-1)
       this.$router.push("/newFriendInfo")
-    }
+    },
+    rightClick(MouseEvent,friendXiuxianId){
+      this.menuVisible = false // 先把模态框关死，目的是 第二次或者第n次右键鼠标的时候 它默认的是true
+      this.menuVisible = true  // 显示模态窗口，跳出自定义菜单栏
+      var menu = document.querySelector('#menu')
+      document.addEventListener('click', this.foo) // 给整个document添加监听鼠标事件，点击任何位置执行foo方法
+      menu.style.display = "block";
+      menu.style.left = MouseEvent.clientX - 0 + 'px'
+      menu.style.top = MouseEvent.clientY - 80 + 'px'
+      this.selectedFriendXiuxianId=friendXiuxianId
+    },
+    foo() { // 取消鼠标监听事件 菜单栏
+      this.menuVisible = false
+      document.removeEventListener('click', this.foo) // 要及时关掉监听，不关掉的是一个坑，不信你试试，虽然前台显示的时候没有啥毛病，加一个alert你就知道了
+    },
 
+    //删除朋友
+    deleteFriend(){
+      this.$confirm('删除朋友后，将同时删除与该联系人的聊天记录。', '', {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(()=>{
+        const data={
+          "selfXiuxianId":this.getUser.xiuxianUserId,
+          "friendXiuxianId":this.selectedFriendXiuxianId
+        }
+        deleteFriendApi(data).then(res=>{
+          // 删除朋友
+          for (let i=0;i<this.friendlist.length;i++){
+            if(this.friendlist[i].friendXiuxianId===this.selectedFriendXiuxianId){
+              this.friendlist.splice(i,1)
+              break;
+            }
+          }
+
+          // 删除聊天
+          for(let i=0;i<this.chatlist.length;i++){
+            if(this.chatlist[i].friendXiuxianId===this.selectedFriendXiuxianId){
+              this.chatlist.splice(i,1)
+              break;
+            }
+          }
+          for (let i = 0; i < this.chatlist.length; i++) {
+            this.chatlist[i].index=i+1;
+          }
+          //删除好友后，展示空白页面
+          this.selectFriend(0)
+        }).catch(err=>{
+          this.$message.error(err)
+        })
+      })
+
+    }
 
   }
 }
@@ -144,6 +210,27 @@ export default {
       .remark
         font-size: 14px
         line-height: 36px
+
+  .menu_item
+    line-height: 20px
+    font-size :11px
+    text-align: left
+    font-family: "Microsoft YaHei"
+    color:black
+    padding: 3px 25px 3px 20px
+
+  .menu_item:hover
+    background-color: #e5e5e5;
+    cursor:default
+
+  .menu
+    width: 140px
+    z-index: 99999
+    position: absolute
+    border-radius: 2px
+    border: 1px solid #d1d1d1
+    background-color: white
+    box-shadow: 0px 0px 5px #adaeaf
 
 
 </style>

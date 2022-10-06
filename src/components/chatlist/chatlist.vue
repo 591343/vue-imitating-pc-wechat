@@ -1,37 +1,61 @@
 <!-- 聊天列表 -->
 <template>
-  <div class="msglist">
-    <ul>
-      <li v-for="item in searchedChatlist" :key="item.friendXiuxianId" class="sessionlist"
-          :class="{ active: item.friendXiuxianId === selectId }"
-          @click="selectSession(item.friendXiuxianId)">
-        <div class="list-left">
-          <img class="avatar" width="42" height="42"
-               :alt="item.remark===null||item.remark===''?item.nickname:item.remark" :src="item.profile">
-        </div>
-        <div class="list-right">
-          <p class="name">{{ item.remark === null || item.re === '' ? item.nickname : item.remark }}</p>
-          <span class="time">{{ item.messages[item.messages.length - 1].date | time }}</span>
-          <p class="lastmsg">{{
-              item.messages[item.messages.length - 1].chatMessageType === 0 ? item.messages[item.messages.length - 1].content :
-                "[图片]"
-            }}</p>
-        </div>
-      </li>
-    </ul>
-  </div>
-</template>
 
+  <div class="msglist">
+
+    <ul>
+        <li v-for="item in searchedChatlist" :key="item.friendXiuxianId" class="sessionlist"
+            :class="{ active: item.friendXiuxianId === selectId }"
+            @click="selectSession(item.friendXiuxianId)" slot="reference" @contextmenu.prevent="rightClick($event,item.friendXiuxianId)">
+
+          <div class="list-left">
+            <img class="avatar" width="42" height="42"
+                 :alt="item.remark===null||item.remark===''?item.nickname:item.remark" :src="item.profile">
+          </div>
+          <div class="list-right">
+            <p class="name">{{ item.remark === null || item.re === '' ? item.nickname : item.remark }}</p>
+            <span class="time">{{ item.messages[item.messages.length - 1].date | time }}</span>
+            <p class="lastmsg">{{
+                item.messages[item.messages.length - 1].chatMessageType === 0 ? item.messages[item.messages.length - 1].content :
+                  "[图片]"
+              }}</p>
+
+          </div>
+        </li>
+    </ul>
+
+    <div v-show="menuVisible">
+      <ul id="menu" class="menu">
+        <li class="menu_item" @click="">置顶</li>
+        <li class="menu_item" @click="">标为未读</li>
+        <li class="menu_item" @click="">消息免打扰</li>
+        <li class="menu_item" style="border-bottom: 1px solid #d1d1d1;" @click="">在独立窗口打开</li>
+
+        <li class="menu_item" @click="deleteChat">删除聊天</li>
+      </ul>
+    </div>
+
+  </div>
+
+</template>
+"
 <script>
 import {mapState, mapActions, mapGetters} from 'vuex'
-import {getChatList} from '../../apis/chat.api'
+import {deleteChatListItemRes, getChatList} from '../../apis/chat.api'
+import store from "../../store";
 
 export default {
-
+  data() {
+    return {
+      menuVisible: false,
+      selectedFriendXiuxianId:'',
+    }
+  },
   computed: {
     ...mapState([
       'selectId',
-      'searchText'
+      'searchText',
+      'chatlist'
     ]),
     ...mapGetters([
       'searchedChatlist',
@@ -45,7 +69,48 @@ export default {
   methods: {
     ...mapActions([
       'selectSession',
-    ])
+    ]),
+    rightClick(MouseEvent,friendXiuxianId){
+      this.menuVisible = false // 先把模态框关死，目的是 第二次或者第n次右键鼠标的时候 它默认的是true
+      this.menuVisible = true  // 显示模态窗口，跳出自定义菜单栏
+      var menu = document.querySelector('#menu')
+      document.addEventListener('click', this.foo) // 给整个document添加监听鼠标事件，点击任何位置执行foo方法
+      menu.style.display = "block";
+      menu.style.left = MouseEvent.clientX - 0 + 'px'
+      menu.style.top = MouseEvent.clientY - 80 + 'px'
+      this.selectedFriendXiuxianId=friendXiuxianId // 设置右键选中的对象Id
+    },
+    // 取消鼠标监听事件 菜单栏
+    foo() {
+      this.menuVisible = false
+      document.removeEventListener('click', this.foo) // 要及时关掉监听，不关掉的是一个坑，不信你试试，虽然前台显示的时候没有啥毛病，加一个alert你就知道了
+    },
+    // 删除聊天
+    deleteChat(){
+      this.$confirm('删除聊天后，将同时删除聊天记录，包括聊天中的图片等内容。', '', {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        const data = {
+          "selfXiuxianId": this.getUser.xiuxianUserId,
+          "friendXiuxianId": this.selectedFriendXiuxianId
+        }
+        deleteChatListItemRes(data).then(res=>{
+          for(let i=0;i<this.chatlist.length;i++){
+            if(this.chatlist[i].friendXiuxianId===this.selectedFriendXiuxianId){
+              this.chatlist.splice(i,1)
+              break;
+            }
+          }
+          for (let i = 0; i < this.chatlist.length; i++) {
+            this.chatlist[i].index=i+1;
+          }
+        }).catch(error => {
+          this.$message.error(error);
+        })
+      })
+    }
   },
 
   //filters用于文本格式化
@@ -71,8 +136,6 @@ export default {
       }
 
       return date.getFullYear() + "/" + date.getMonth() + "/" + date.getDate()
-
-
     }
   },
 }
@@ -126,4 +189,26 @@ export default {
       overflow: hidden
       white-space: nowrap
       text-overflow: ellipsis
+
+  .menu_item
+    line-height: 20px
+    font-size :11px
+    text-align: left
+    font-family: "Microsoft YaHei"
+    color:black
+    padding: 3px 25px 3px 20px
+
+  .menu_item:hover
+    background-color: #e5e5e5;
+    cursor:default
+
+  .menu
+    width: 140px
+    z-index: 99999
+    position: absolute
+    border-radius: 2px
+    border: 1px solid #d1d1d1
+    background-color: white
+    box-shadow: 0px 0px 5px #adaeaf
+
 </style>

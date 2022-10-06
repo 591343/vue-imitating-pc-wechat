@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import router from './router'
 import storage from "./utils/storage";
 import {addChatList, sendSingleChat, sendGroupChat} from "./apis/chat.api";
+import {getFriendsByFromIdAndToId} from "./apis/friend.api";
 
 
 Vue.use(Vuex)
@@ -138,47 +139,59 @@ const mutations = {
   // 发送信息
   sendMessage(state, msg) {
     let result = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
-    const timestamp = msg.timestamp
-    let message = {
-      content: msg.content === null ? "" : msg.content,
-      remoteMediaUrl: msg.remoteMediaUrl === null ? "" : msg.remoteMediaUrl,
-      date: timestamp + "",
-      chatMessageType: msg.chatMessageType,
-      self: true
-    }
-    let chatMessage = {
-      fromId: state.user.xiuxianUserId,
-      toId: state.selectId,
-      fromTime: timestamp,
-      chatMessageType: msg.chatMessageType
-    }
-    if (msg.chatMessageType === 0) {
-      chatMessage.content = msg.content
-    } else if (msg.chatMessageType === 1) {
-      chatMessage.remoteMediaUrl = msg.remoteMediaUrl
-    }
+    getFriendsByFromIdAndToId(state.selectId,state.user.xiuxianUserId).then(res=>{
+      if(res.data.data!=null){
+        if(!res.data.data){  //不是朋友
+          if(result.type===0){ //单聊
+            Vue.prototype.$message.info("开启好友验证,你还不是他(她)好友")
+          } else if(result.type===1){ //群聊
+            Vue.prototype.$message.info("您已被踢出群聊")
+          }
+        }else {
+          const timestamp = msg.timestamp
+          let message = {
+            content: msg.content === null ? "" : msg.content,
+            remoteMediaUrl: msg.remoteMediaUrl === null ? "" : msg.remoteMediaUrl,
+            date: timestamp + "",
+            chatMessageType: msg.chatMessageType,
+            self: true
+          }
+          let chatMessage = {
+            fromId: state.user.xiuxianUserId,
+            toId: state.selectId,
+            fromTime: timestamp,
+            chatMessageType: msg.chatMessageType
+          }
+          if (msg.chatMessageType === 0) {
+            chatMessage.content = msg.content
+          } else if (msg.chatMessageType === 1) {
+            chatMessage.remoteMediaUrl = msg.remoteMediaUrl
+          }
 
-    if (result.type === 0) {
-      sendSingleChat(chatMessage).then(res => {
-        console.log("单聊消息已被服务器接收到")
-      }).catch(error => {
-        this.$message.error(error)
-      })
-    } else {
-      let chatUser = {
-        xiuxianUserId: state.user.xiuxianUserId,
-        profile: state.user.img,
-        nickname: state.user.nickname,
+          if (result.type === 0) {
+            sendSingleChat(chatMessage).then(res => {
+              console.log("单聊消息已被服务器接收到")
+            }).catch(error => {
+              this.$message.error(error)
+            })
+          } else {
+            let chatUser = {
+              xiuxianUserId: state.user.xiuxianUserId,
+              profile: state.user.img,
+              nickname: state.user.nickname,
+            }
+            chatMessage.chatUser = chatUser
+            sendGroupChat(chatMessage).then(res => {
+              console.log("群聊消息已被服务器接收到")
+            }).catch(error => {
+              this.$message.error(error)
+            })
+            message.chatUser = chatUser
+          }
+          result.messages.push(message);
+        }
       }
-      chatMessage.chatUser = chatUser
-      sendGroupChat(chatMessage).then(res => {
-        console.log("群聊消息已被服务器接收到")
-      }).catch(error => {
-        this.$message.error(error)
-      })
-      message.chatUser = chatUser
-    }
-    result.messages.push(message);
+    })
   },
   robotSendMessage(state, msg) {
     let result = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
@@ -286,7 +299,6 @@ const mutations = {
 
     state.newFriendList = newFriendList
   },
-
 }
 const getters = {
   getToken(state) {

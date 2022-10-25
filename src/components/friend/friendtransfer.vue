@@ -2,7 +2,7 @@
   <el-container class="transfer-main">
     <el-header height="40px" style="padding: 0 0 20px 10px">
       <el-col :span="12">
-        <friend-search style="padding: 0 10px 10px 0;width: 218px"></friend-search>
+        <friend-search style="padding: 0 10px 10px 0;width: 218px" ref="friendSearch"></friend-search>
       </el-col>
       <el-col :span="12">
         <div class="friend-number">
@@ -25,48 +25,41 @@
                 {{ item.remark === null || item.remark === "" ? item.nickname : item.remark }}
               </div>
               <div v-else class="left-remark">{{ item.remark === null ? item.groupName : item.remark }}</div>
-
             </div>
             <div class="left-right-checkbox">
               <input class="left-checkbox" type="checkbox" :id="item.friendXiuxianId"
                      @click="addFriend(item)"></input>
             </div>
           </li>
-          <!--        <li v-for="index in 150" class="left-frienditem" :key="index">-->
-          <!--          <div class="left-friend-info">-->
-          <!--            <img class="left-avatar" width="36" height="36"-->
-          <!--                 src="https://xiuxian-im.oss-cn-beijing.aliyuncs.com/userprofile/20220928/04f7768e90e44f738dea01d4581af94c.jpg">-->
-
-          <!--            <div class="left-remark">-->
-          <!--              小贱贱-->
-          <!--            </div>-->
-
-
-          <!--          </div>-->
-          <!--          <div class="left-right-checkbox">-->
-          <!--            <input class="left-checkbox" type="checkbox" name="friends" :value="index" @click="showdata"></input>-->
-          <!--          </div>-->
-          <!--        </li>-->
         </ul>
       </el-aside>
       <el-main class="right">
-        <li v-for="(item) in selectedFriends " class="right-frienditem" :key="item.friendXiuxianId">
-          <div class="right-friend-info">
-            <img v-if="item.type===0" class="right-avatar" width="36" height="36" :src="item.profile">
-            <img v-else class="right-avatar" width="36" height="36" :src="item.groupProfile">
-            <div v-if="item.type===0" class="right-remark">
-              {{ item.remark === null || item.remark === "" ? item.nickname : item.remark }}
-            </div>
-            <div v-else class="right-remark">{{ item.remark === null ? item.groupName : item.remark }}</div>
+        <ul>
+          <li v-for="(item) in selectedFriends " class="right-frienditem" :key="item.friendXiuxianId">
+            <div class="right-friend-info">
+              <img v-if="item.type===0" class="right-avatar" width="36" height="36" :src="item.profile">
+              <img v-else class="right-avatar" width="36" height="36" :src="item.groupProfile">
+              <div v-if="item.type===0" class="right-remark">
+                {{ item.remark === null || item.remark === "" ? item.nickname : item.remark }}
+              </div>
+              <div v-else class="right-remark">{{ item.remark === null ? item.groupName : item.remark }}</div>
 
-          </div>
-          <div class="right-right-checkbox">
-            <i class="el-icon-error delete-but" @click="deleteSelectedFriend(item.friendXiuxianId)"></i>
-          </div>
-        </li>
+            </div>
+            <div class="right-right-checkbox">
+              <i class="el-icon-error delete-but" @click="deleteSelectedFriend(item.friendXiuxianId)"></i>
+            </div>
+          </li>
+        </ul>
+
 
       </el-main>
     </el-container>
+    <el-footer height="20px">
+      <div class="but-group">
+        <el-button type="success" size="mini" ref="send" :disabled="disable">发送</el-button>
+        <el-button size="mini">取消</el-button>
+      </div>
+    </el-footer>
   </el-container>
 </template>
 
@@ -89,11 +82,13 @@ export default {
       selectedNumber: 0,
       selectedFriends: [],
       setFriends: undefined,
+      disable:true
     };
   },
 
   mounted() {
     this.setFriends = new Set()
+
   },
   computed: {
     ...mapGetters([
@@ -140,6 +135,20 @@ export default {
         this.setFriends.delete(friendXiuxianId)
       }
       this.selectedNumber = this.selectedFriends.length
+      console.log(this.selectedNumber)
+    },
+
+    // 在关闭推荐给朋友这个弹窗框后，重置所有数据
+    resetData() {
+
+      this.$refs.friendSearch.del()
+      this.selectedNumber=0
+      for(let i=0;i<this.selectedFriends.length;i++){
+        document.getElementById(this.selectedFriends[i].friendXiuxianId).checked=false
+        console.log(document.getElementById(this.selectedFriends[i].friendXiuxianId).checked)
+      }
+      this.selectedFriends=[]
+      this.setFriends=new Set()
     }
   },
 
@@ -154,7 +163,15 @@ export default {
           }
         }
       })
+
     },
+    selectedNumber(val){
+      if(val===0){
+        this.disable=true
+      }else {
+        this.disable=false
+      }
+    }
   }
 }
 </script>
@@ -162,7 +179,7 @@ export default {
 <style lang="stylus" scoped>
 .transfer-main
   height: 400px
-
+  padding-bottom: 0px
   .friend-number
     margin-top: 12px
 
@@ -205,7 +222,7 @@ export default {
         margin-top: 12px
 
   .right
-    height: 380px
+    height: 345px
     padding: 20px 0px 20px 20px
 
     .right-frienditem
@@ -240,7 +257,8 @@ export default {
         .delete-but
           font-size: 18px
           cursor: pointer
-
+  .but-group
+    margin-left:310px
 
   input[type=checkbox] {
     cursor: pointer;

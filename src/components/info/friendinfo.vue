@@ -166,10 +166,10 @@
       :visible.sync="dialogRecommendToFriend"
       width="550px"
       :modal="false"
-
+      @close="resetData"
       class="recommend-friend--dialog"
       center>
-      <friend-transfer :open="dialogRecommendToFriend" v-if=""></friend-transfer>
+      <friend-transfer :open="dialogRecommendToFriend" ref="friendTransfer" ></friend-transfer>
 
     </el-dialog>
   </div>
@@ -387,6 +387,9 @@ export default {
     },
     showRecommendToFriendDialog(){
       this.dialogRecommendToFriend=true
+    },
+    resetData(){
+      this.$refs.friendTransfer.resetData()
     }
 
   },

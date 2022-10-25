@@ -13,14 +13,14 @@
                  :alt="item.remark===null||item.remark===''?item.nickname:item.remark" :src="item.profile">
           </div>
           <div class="list-right">
-            <p class="name">{{ item.remark === null || item.re === '' ? item.nickname : item.remark }}</p>
+            <p class="name">{{ item.remark === null || item.remark === '' ? item.nickname : item.remark }}</p>
             <span class="time">{{ item.messages[item.messages.length - 1].date | time }}</span>
             <p class="lastmsg">{{
                 item.messages[item.messages.length - 1].chatMessageType === 0 ? item.messages[item.messages.length - 1].content :
                   "[图片]"
               }}</p>
+            </div>
 
-          </div>
         </li>
     </ul>
 

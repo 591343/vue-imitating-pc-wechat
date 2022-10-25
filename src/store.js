@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import router from './router'
 import storage from "./utils/storage";
-import {addChatList, sendSingleChat, sendGroupChat} from "./apis/chat.api";
+import {addChatList, sendGroupChat, sendSingleChat} from "./apis/chat.api";
 import {getFriendsByFromIdAndToId} from "./apis/friend.api";
 
 
@@ -16,11 +16,15 @@ const state = {
   userName: "", // 记录的登录时的手机号
   // 输入的搜索值
   searchText: '',
+  friendSearchText:'',//专门在穿梭框中搜索朋友
   // 当前登录用户
   user: {
-    nickname: 'ratel',
     xiuxianUserId: '',
-    img: 'static/images/UserAvatar.jpg'
+    profile: '',
+    nickname: '',
+    signature: '',
+    sex: 1,
+    area: ''
   },
   // 对话好友列表
   chatlist: [],
@@ -108,9 +112,7 @@ const mutations = {
     state.userName = userName;
   },
   setUser(state, user) {
-    state.user.nickname = user.nickname
-    state.user.img = user.profile
-    state.user.xiuxianUserId = user.xiuxianUserId
+    state.user = user
   },
   // 从localStorage 中获取数据
   initData(state) {
@@ -122,6 +124,9 @@ const mutations = {
   // 获取搜索值
   search(state, value) {
     state.searchText = value
+  },
+  searchFriend(state,value){
+    state.friendSearchText=value
   },
   // 得知用户当前选择的是哪个对话。便于匹配对应的对话框
   selectSession(state, value) {
@@ -139,60 +144,58 @@ const mutations = {
   // 发送信息
   sendMessage(state, msg) {
     let result = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
-    getFriendsByFromIdAndToId(state.selectId,state.user.xiuxianUserId).then(res=>{
-      if(res.data.data!=null){
-        if(!res.data.data){  //不是朋友
-          if(result.type===0){ //单聊
+    if (result.type === 0) { //如果是单聊
+      getFriendsByFromIdAndToId(state.selectId, state.user.xiuxianUserId).then(res => {
+        if (res.data.data != null) {
+          if (!res.data.data) {  //不是朋友
             Vue.prototype.$message.info("开启好友验证,你还不是他(她)好友")
-          } else if(result.type===1){ //群聊
-            Vue.prototype.$message.info("您已被踢出群聊")
           }
-        }else {
-          const timestamp = msg.timestamp
-          let message = {
-            content: msg.content === null ? "" : msg.content,
-            remoteMediaUrl: msg.remoteMediaUrl === null ? "" : msg.remoteMediaUrl,
-            date: timestamp + "",
-            chatMessageType: msg.chatMessageType,
-            self: true
-          }
-          let chatMessage = {
-            fromId: state.user.xiuxianUserId,
-            toId: state.selectId,
-            fromTime: timestamp,
-            chatMessageType: msg.chatMessageType
-          }
-          if (msg.chatMessageType === 0) {
-            chatMessage.content = msg.content
-          } else if (msg.chatMessageType === 1) {
-            chatMessage.remoteMediaUrl = msg.remoteMediaUrl
-          }
-
-          if (result.type === 0) {
-            sendSingleChat(chatMessage).then(res => {
-              console.log("单聊消息已被服务器接收到")
-            }).catch(error => {
-              this.$message.error(error)
-            })
-          } else {
-            let chatUser = {
-              xiuxianUserId: state.user.xiuxianUserId,
-              profile: state.user.img,
-              nickname: state.user.nickname,
-            }
-            chatMessage.chatUser = chatUser
-            sendGroupChat(chatMessage).then(res => {
-              console.log("群聊消息已被服务器接收到")
-            }).catch(error => {
-              this.$message.error(error)
-            })
-            message.chatUser = chatUser
-          }
-          result.messages.push(message);
         }
+      })
+    }
+    const timestamp = msg.timestamp
+    let message = {
+      content: msg.content === null ? "" : msg.content,
+      remoteMediaUrl: msg.remoteMediaUrl === null ? "" : msg.remoteMediaUrl,
+      date: timestamp + "",
+      chatMessageType: msg.chatMessageType,
+      self: true
+    }
+    let chatMessage = {
+      fromId: state.user.xiuxianUserId,
+      toId: state.selectId,
+      fromTime: timestamp,
+      chatMessageType: msg.chatMessageType
+    }
+    if (msg.chatMessageType === 0) {
+      chatMessage.content = msg.content
+    } else if (msg.chatMessageType === 1) {
+      chatMessage.remoteMediaUrl = msg.remoteMediaUrl
+    }
+
+    if (result.type === 0) {
+      sendSingleChat(chatMessage).then(res => {
+        console.log("单聊消息已被服务器接收到")
+      }).catch(error => {
+        this.$message.error(error)
+      })
+    } else if (result.type === 1) {
+      let chatUser = {
+        xiuxianUserId: state.user.xiuxianUserId,
+        profile: state.user.profile,
+        nickname: state.user.nickname,
       }
-    })
-  },
+      chatMessage.chatUser = chatUser
+      sendGroupChat(chatMessage).then(res => {
+        console.log("群聊消息已被服务器接收到")
+      }).catch(error => {
+        this.$message.error(error)
+      })
+      message.chatUser = chatUser
+    }
+    result.messages.push(message);
+  }
+  ,
   robotSendMessage(state, msg) {
     let result = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
     setTimeout(() => {
@@ -211,7 +214,7 @@ const mutations = {
   send(state) {
     const timestamp = new Date().getTime()
     let result = state.friendlist.find(friend => friend.friendXiuxianId === state.selectFriendId)
-    let msg = state.chatlist.find(msg => msg.nickname === result.nickname || msg.nickname === result.groupName)
+    let msg = state.chatlist.find(msg => msg.friendXiuxianId === state.selectFriendId)
     if (!msg) {
       state.selectId = result.friendXiuxianId
       for (let i = 0; i < state.chatlist.length; i++) {
@@ -275,7 +278,6 @@ const mutations = {
         })
       }
 
-
       let chatList = {
         selfXiuxianId: state.user.xiuxianUserId,
         friendXiuxianId: result.friendXiuxianId,
@@ -334,6 +336,21 @@ const getters = {
     });
     return friends
   },
+  searchedFriends(state){
+    return state.friendlist.filter(friends => {
+      var res = false
+      if (friends.type === 0) {
+        res = friends.nickname.includes(state.friendSearchText)
+      } else if (friends.type === 1) {
+        res = friends.groupName.includes(state.friendSearchText)
+      }
+
+      if (friends.remark != null) {
+        res = res || friends.remark.includes(state.friendSearchText)
+      }
+      return res
+    })
+  },
   // 通过当前选择是哪个对话匹配相应的对话
   selectedChat(state) {
     let session = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
@@ -378,6 +395,12 @@ const actions = {
   search: ({commit}, value) => {
     setTimeout(() => {
       commit('search', value)
+    }, 100)
+  },
+
+  searchFriend: ({commit}, value) => {
+    setTimeout(() => {
+      commit('searchFriend', value)
     }, 100)
   },
   selectSession: ({commit}, value) => commit('selectSession', value),

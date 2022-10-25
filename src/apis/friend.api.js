@@ -78,3 +78,20 @@ export function deleteFriendApi(friendListItemRel){
   })
 }
 
+//修改朋友的备注信息
+export function changeFriendsRemark(changeFriendRemark){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriend/changeremark',
+    method: 'post',
+    data:changeFriendRemark
+  })
+}
+
+//修改朋友的备注信息
+export function changeFriendsPermission(changeFriendPermission){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriend/changepermission',
+    method: 'post',
+    data:changeFriendPermission
+  })
+}

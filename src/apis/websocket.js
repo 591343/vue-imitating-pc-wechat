@@ -237,8 +237,9 @@ export function connect() {
 
 
           const userFriend = store.state.friendlist.find(friend => friend.friendXiuxianId === repObj.fromId)
-          repObj.chatUser.remark = userFriend.remark
-
+          if(userFriend!==undefined){
+            repObj.chatUser.remark = userFriend.remark
+          }
           if (!result) {
             const friend = store.state.friendlist.find(friend => friend.friendXiuxianId === repObj.toId)
             for (let i = 0; i < store.state.chatlist.length; i++) {

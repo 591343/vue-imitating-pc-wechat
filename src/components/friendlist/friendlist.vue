@@ -34,7 +34,7 @@
              @click="router_to_friend_info1(item.friendXiuxianId,item.type)">
           <img v-if="item.type===0" class="avatar" width="36" height="36" :src="item.profile">
           <img v-else class="avatar" width="36" height="36" :src="item.groupProfile">
-          <div v-if="item.type===0" class="remark">{{ item.remark===null?item.nickname:item.remark }}</div>
+          <div v-if="item.type===0" class="remark">{{ item.remark===null||item.remark===""?item.nickname:item.remark }}</div>
           <div v-else class="remark">{{ item.remark===null?item.groupName:item.remark }}</div>
         </div>
       </li>

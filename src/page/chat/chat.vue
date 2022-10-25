@@ -39,12 +39,6 @@ export default {
       'selectedChat',
     ])
   },
-
-  mounted() {
-    console.log('selectedChat',this.selectedChat)
-  }
-
-
 }
 </script>
 

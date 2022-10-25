@@ -7,16 +7,32 @@
       </div>
     </header>
 
+    <!--    单聊html-->
     <div class="message-wrapper" ref="list" v-if="selectedChat.type===0">
       <ul v-if="selectedChat">
         <li v-for="(item,i) in selectedChat.messages" v-show="showMessage(item)" class="message-item" :key="i">
           <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
           <div class="main" :class="{ self: item.self }">
-            <img class="avatar" width="36" height="36" :src="item.self ? user.img : selectedChat.profile"/>
+            <el-popover
+              popper-class="poppover"
+              placement="right-end"
+              width="200"
+              :ref="`ref_${i}`"
+              trigger="click"
+              :visible-arrow="false"
+              @show="getUserInfo(item.self,selectedChat.friendXiuxianId)"
+            >
+              <delivery-info
+                :user-info="item.self?user:userInfo['user_'+selectedChat.friendXiuxianId]===undefined?{}:userInfo['user_'+selectedChat.friendXiuxianId]"
+                :chat-type="0" @chatEvent="refreshChat(i,0)" @callBack="changUserInfo"
+                @closeEvent="closeDeliveryInfo(i,0,true,selectedChat.friendXiuxianId)"></delivery-info>
+              <img class="avatar" width="36" height="36" :src="item.self ? user.profile : selectedChat.profile"
+                   slot="reference"/>
+            </el-popover>
             <div class="content" v-if="item.chatMessageType===0&&item.content!==''">
               <div class="text" v-html="replaceFace(item.content)"></div>
             </div>
-            <div class="imgContent" v-else>
+            <div class="img-content" v-else>
               <el-image
                 style="width: 100px; height: 100px"
                 :src="item.remoteMediaUrl"
@@ -28,20 +44,36 @@
       </ul>
     </div>
 
+    <!--    群聊html-->
     <div class="message-wrapper" ref="list" v-else>
       <ul v-if="selectedChat">
         <li v-for="(item,i) in selectedChat.messages" v-show="showMessage(item)" class="message-item" :key="i">
           <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
 
-          <div class="main" :class="{ self: item.self }">
+          <div class="main" :class="{ self: item.self }" v-bind="userInfo">
             <div class="name">{{ item.chatUser| showName }}</div>
-            <img class="avatar" width="36" height="36" :src="item.self ? user.img : item.chatUser.profile"/>
 
+            <el-popover
+              popper-class="poppover"
+              placement="right-end"
+              width="200"
+              :ref="`group_${i}`"
+              trigger="click"
+              :visible-arrow="false"
+              @show="getUserInfo(item.self,item.chatUser.xiuxianUserId)"
+            >
+              <delivery-info
+                :user-info="item.self?user:userInfo['user_'+item.chatUser.xiuxianUserId]===undefined?{}:userInfo['user_'+item.chatUser.xiuxianUserId]"
+                :chat-type="1" @chatEvent="refreshChat(i,1)" @callBack="changUserInfo"
+                @closeEvent="closeDeliveryInfo(i,1,true,item.chatUser.xiuxianUserId)"></delivery-info>
+              <img class="avatar" width="36" height="36" :src="item.self ? user.profile : item.chatUser.profile"
+                   slot="reference"/>
+            </el-popover>
             <div class="content" v-if="item.chatMessageType===0&&item.content!==''">
 
               <div class="text" v-html="replaceFace(item.content)"></div>
             </div>
-            <div class="imgContent" v-else>
+            <div class="img-content" v-else>
               <el-image
                 style="width: 100px; height: 100px"
                 :src="item.remoteMediaUrl"
@@ -52,13 +84,77 @@
         </li>
       </ul>
     </div>
+
+
+    <el-dialog
+      title="申请添加朋友"
+      :visible.sync="dialogVisible"
+      width="300px"
+      :show-close="false"
+      :modal="false"
+      class="add-friend-dialog"
+      center>
+      <span class="input-name">发送添加朋友申请</span>
+      <el-input
+        v-model="form.introduce"
+        placeholder="请输入内容"
+        clearable
+        style="margin-top: 10px;margin-bottom: 10px">
+      </el-input>
+      <span class="input-name">备注名</span>
+      <el-input
+        v-model="form.remark"
+        placeholder="备注名"
+        maxlength="15"
+        clearable
+        style="margin-top: 10px;margin-bottom: 10px">
+      </el-input>
+      <span class="input-name">设置朋友权限</span>
+      <div class="permission">
+        <el-radio-group v-model="form.permission" style="width:100%;margin-top: 10px;margin-bottom: 10px"
+                        fill="#1aad19">
+          <div class="friend-permission">
+            <el-radio-button class="friend-permission-button" label="0">聊天、朋友圈、修仙运动</el-radio-button>
+          </div>
+          <div class="friend-permission">
+            <el-radio-button class="friend-permission-button" label="1">仅聊天</el-radio-button>
+          </div>
+        </el-radio-group>
+      </div>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button type="success" @click="addFriend" size="medium">确 定</el-button>
+        <el-button @click="dialogVisible = false" size="medium">取 消</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import {mapGetters, mapState} from 'vuex'
+import {searchFriend} from "../../apis/search.api";
+import deliveryinfo from "../info/deliveryinfo";
+import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/constant";
+import {getFriendListItem, getFriendsByFromIdAndToId, sendAddFriend} from "../../apis/friend.api";
+import {getChatListItem} from "../../apis/chat.api";
+import store from "../../store";
 
 export default {
+  components: {
+    "delivery-info": deliveryinfo
+  },
+  data() {
+    return {
+      userInfo: {},
+      dialogVisible: false,
+      form: {
+        introduce: "",
+        remark: '',
+        permission: '0',
+      },
+      friendInfo: {},
+    }
+  },
   computed: {
     ...mapGetters([
       'selectedChat',
@@ -67,7 +163,9 @@ export default {
     ]),
     ...mapState([
       'user',
-      'emojis'
+      'emojis',
+      'friendlist',
+      'chatlist'
     ])
   },
   mounted() {
@@ -102,7 +200,95 @@ export default {
       } else {
         return item.remoteMediaUrl !== null && item.remoteMediaUrl !== ''
       }
-    }
+    },
+    getUserInfo(self, xiuxianUserId) {
+
+      if (self || this.userInfo.hasOwnProperty('user_' + xiuxianUserId)) return;
+      if (!self) {
+        searchFriend(xiuxianUserId).then(res => {
+          if (res.data.data != null) {
+            this.$set(this.userInfo, "user_" + xiuxianUserId, res.data.data)
+          }
+        })
+      }
+      console.log(this.userInfo)
+    },
+    refreshChat(index, type) {
+      this.closeDeliveryInfo(index, type, false)
+      setTimeout(() => this.$refs.list.scrollTop = this.$refs.list.scrollHeight, 0)
+    },
+    changUserInfo(xiuxianUserId, remark) {
+      let friend = this.friendlist.find(friend => friend.friendXiuxianId === xiuxianUserId)
+      let chat = this.chatlist.find(session => session.friendXiuxianId === xiuxianUserId)
+      if (chat !== undefined) chat.remark = remark
+      friend.remark = remark
+    },
+    closeDeliveryInfo(index, type, showDialog, xiuxianUserId) {
+      if (type === 0) {
+        this.$refs[`ref_${index}`][0].doClose()
+      } else if (type === 1) {
+        this.$refs[`group_${index}`][0].doClose()
+      }
+      this.dialogVisible = showDialog
+
+      if (showDialog) {
+        this.form.introduce = "我是" + this.user.nickname
+        this.friendInfo = this.userInfo['user_' + xiuxianUserId];
+        this.form.remark = this.friendInfo.nickname
+      }
+    },
+    //添加朋友到通讯录
+    addFriend() {
+
+      this.dialogVisible = false
+      let addFriend = {
+        noticeMessageVo: {
+          fromId: this.user.xiuxianUserId,
+          toId: this.friendInfo.xiuxianUserId,
+          noticeMessageType: ADD_FRIEND_NOTICE,
+          noticeTime: new Date().getTime(),
+          status: WAITING_FOR_RECEIVE_STATUS,
+          content: this.form.introduce,
+        },
+        remark: this.form.remark,
+        permission: parseInt(this.form.permission)
+      }
+
+      //先判断一下对方有没有删除自己
+      getFriendsByFromIdAndToId(this.friendInfo.xiuxianUserId, this.user.xiuxianUserId).then((res) => {
+        if (res.data.data != null) {
+          const isFriends = res.data.data
+          sendAddFriend(addFriend).then((res) => {
+            if (isFriends) {
+              getFriendListItem(this.user.xiuxianUserId, this.friendInfo.xiuxianUserId).then(res => {
+                if (res.data.data != null) {
+                  let friendListItem = res.data.data
+                  this.friendlist.push(friendListItem)
+                }
+              })
+              getChatListItem(this.user.xiuxianUserId, this.friendInfo.xiuxianUserId).then(res => {
+                if (!res.data.data) return
+                const chatListItem = res.data.data
+
+                let result = this.chatlist.find(session => session.friendXiuxianId === this.friendInfo.xiuxianUserId);
+                //还没添加到聊天列表中,但是对方给我发消息了，先把对方加入聊天列表中
+
+                if (!result) {
+                  for (let i = 0; i < this.chatlist.length; i++) {
+                    this.chatlist[i].index++;
+                  }
+                  this.chatlist.unshift(chatListItem)
+                }
+              })
+            }
+            this.$message.info("已发送")
+          }).catch(error => {
+            this.$message.error(error)
+          })
+
+        }
+      })
+    },
   },
   filters: {
     // 将日期过滤为 hour:minutes
@@ -182,7 +368,6 @@ export default {
 
     .main
       .name
-
         font-size: 10px
         color #adaeaf
         margin-left: 15px
@@ -192,6 +377,7 @@ export default {
         float: left
         margin-left: 15px
         border-radius: 3px
+        cursor: pointer
 
       .content
         display: inline-block
@@ -208,7 +394,7 @@ export default {
         background-color: #fafafa
         border-radius: 4px
 
-      .imgContent
+      .img-content
         display: inline-block
         margin-left: 10px
         position: relative
@@ -223,6 +409,9 @@ export default {
           right: 100%
           border: 6px solid transparent
           border-right-color: #fafafa
+
+      .el-popover.poppover
+        color: black
 
     .self
       text-align: right

@@ -7,7 +7,7 @@
       <div class="detInfo">
         <div class="group-name"><span>群&nbsp&nbsp&nbsp名</span>{{ group.groupName }}</div>
         <div class="num"><span>人&nbsp&nbsp&nbsp数</span>{{ group.number }}人</div>
-        <div class="wxid"><span>微信号</span>{{ group.friendXiuxianId }}</div>
+        <div class="wxid"><span>群聊号</span>{{ group.friendXiuxianId }}</div>
       </div>
       <div class="send" v-if="selectFriendId===-2" @click="joinGroup">
         <span>申请加入群聊</span>

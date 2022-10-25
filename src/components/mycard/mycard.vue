@@ -8,11 +8,9 @@
         trigger="click"
         :visible-arrow="false"
         >
-        <delivery-info></delivery-info>
-        <img :src="user.img" class="avatar" slot="reference">
-
+        <delivery-info :user-info="user"></delivery-info>
+        <img :src="user.profile" class="avatar" slot="reference">
       </el-popover>
-
     </header>
     <div class="navbar" @click="clearSearch">
       <router-link to="/chat" class="icon iconfont icon-msg"></router-link>
@@ -114,7 +112,7 @@ export default {
     height: 36px
     margin: 20px 12px 0 12px
     border-radius: 2px
-
+    cursor: pointer
   .navbar
     width: 100%
     text-align: center

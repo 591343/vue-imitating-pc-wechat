@@ -51,7 +51,7 @@
 // import { setToken } from "@/request/auth";
 import {postLogin} from "../apis/login.api";
 import {searchXiuXianUser} from "../apis/search.api"
-import {mapMutations} from "vuex";
+import {mapMutations, mapState} from "vuex";
 import {disconnect} from "../apis/websocket";
 
 export default {
@@ -88,6 +88,9 @@ export default {
   methods: {
     ...mapMutations([
       'setUser'
+    ]),
+    ...mapState([
+      'user'
     ]),
     login(form) {
       this.$refs[form].validate((valid) => {
@@ -126,10 +129,14 @@ export default {
                     let user={
                       xiuxianUserId:data.xiuxianUserId,
                       profile:data.profile,
-                      nickname:data.nickname
+                      nickname:data.nickname,
+                      signature:data.signature,
+                      sex:data.sex,
+                      area:data.area
                     }
 
                     this.setUser(user)
+
                     setTimeout(() => {
                       // 此时要判断/login后面的参数redirect，若无参数，进入主页;
 

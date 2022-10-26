@@ -135,7 +135,7 @@ export default {
         this.setFriends.delete(friendXiuxianId)
       }
       this.selectedNumber = this.selectedFriends.length
-      console.log(this.selectedNumber)
+
     },
 
     // 在关闭推荐给朋友这个弹窗框后，重置所有数据
@@ -145,7 +145,7 @@ export default {
       this.selectedNumber=0
       for(let i=0;i<this.selectedFriends.length;i++){
         document.getElementById(this.selectedFriends[i].friendXiuxianId).checked=false
-        console.log(document.getElementById(this.selectedFriends[i].friendXiuxianId).checked)
+
       }
       this.selectedFriends=[]
       this.setFriends=new Set()

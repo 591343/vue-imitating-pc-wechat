@@ -52,13 +52,11 @@ export default {
       this.group = this.selectedFriend
     }
 
-    console.log("group", this.group)
 
   },
   watch: {
     selectFriendId(newVal) {
 
-      console.log("selectFriendId", newVal)
       if (newVal === -2) {
         this.getGroupInfo()
       }
@@ -71,16 +69,13 @@ export default {
     getGroupInfo() {
       if (this.searchText !== '') {
         this.selectFriend(this.searchText)
-        console.log(this.selectedFriend)
-        if (this.selectedFriend.friendXiuxianId !== -1&&this.selectedFriend.type===1) {
-          this.group=this.selectedFriend
 
+        if (this.selectedFriend.friendXiuxianId !== -1 && this.selectedFriend.type === 1) {
+          this.group = this.selectedFriend
           return;
-        }else {
-          this.selectFriend(0)
         }
+        this.selectFriend(-2)
         searchGroupInfo(this.searchText).then((res) => {
-
             // 0代表成功
             if (res.data.code === 0) {
               let data = res.data.data;
@@ -90,9 +85,8 @@ export default {
                 this.group.groupName = data.groupName
                 this.group.managerId = data.managerId
                 this.group.number = data.number
-
-                console.log(this.group)
                 this.$forceUpdate()  //强制渲染
+
               } else {
                 this.selectFriend(0)
                 this.$alert('无法找到该群组,请检查你填写的账号是否正确', '', {
@@ -105,7 +99,6 @@ export default {
           this.selectFriend(0)
           // 错误分为 status-请求错误 和 code-账号密码错误
           this.$message.error(error);
-          console.log(error);
         })
       }
     },

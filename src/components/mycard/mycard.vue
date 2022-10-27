@@ -13,9 +13,9 @@
       </el-popover>
     </header>
     <div class="navbar" @click="clearSearch">
-      <router-link to="/chat" class="icon iconfont icon-msg"></router-link>
-      <router-link to="/friend" class="icon iconfont icon-friend"></router-link>
-      <router-link to="/my" class="icon iconfont icon-collection"></router-link>
+      <router-link to="/chat" class="icon iconfont icon-msg" title="聊天"></router-link>
+      <router-link to="/friend" class="icon iconfont icon-friend" title="通讯录"></router-link>
+      <router-link to="/my" class="icon iconfont icon-collection" title="收藏"></router-link>
     </div>
     <footer>
       <el-popover

@@ -169,8 +169,7 @@
       @close="resetData"
       class="recommend-friend--dialog"
       center>
-      <friend-transfer :open="dialogRecommendToFriend" ref="friendTransfer" ></friend-transfer>
-
+      <friend-transfer :open="dialogRecommendToFriend" :function-type="functionType" ref="friendTransfer" @closeTransferDialog="dialogRecommendToFriend=false"></friend-transfer>
     </el-dialog>
   </div>
 
@@ -192,7 +191,7 @@ import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/cons
 import {getChatListItem} from "../../apis/chat.api";
 import store from "../../store";
 import FriendTransfer from "../friend/friendtransfer";
-
+import {RECOMMENDATION_TO_FRIEND_FUNCTION} from "../../services/constant"
 export default {
   name: "friendinfo",
   components: {FriendTransfer},
@@ -210,7 +209,8 @@ export default {
       },
       dialogSetupRemarkVisible: false,
       dialogSetupFriendPermissionVisible: false,
-      dialogRecommendToFriend: false
+      dialogRecommendToFriend: false,
+      functionType:RECOMMENDATION_TO_FRIEND_FUNCTION,
     }
   },
   computed: {

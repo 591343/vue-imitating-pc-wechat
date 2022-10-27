@@ -24,3 +24,8 @@ export const ADDED_STATUS=3;
 
 //等待验证状态
 export const WAITING_FOR_VERIFY_STATUS=4;
+
+
+// 选择朋友穿梭框相关功能类型
+export const RECOMMENDATION_TO_FRIEND_FUNCTION=1;
+export const ADD_FRIEND_FUNCTION=2;

@@ -5,13 +5,18 @@
         <friend-search style="padding: 0 10px 10px 0;width: 218px" ref="friendSearch"></friend-search>
       </el-col>
       <el-col :span="12">
-        <div class="friend-number">
+        <div class="friend-number" v-if="functionType===1">
           <span style="color: black;font-size: 14px;margin-left: 20px">分别转发给:</span>
           <span style="color: #adaeaf;font-size: 8px;margin-left: 80px" v-if="selectedNumber===0">未选择聊天</span>
           <span style="color: #adaeaf;font-size: 8px;margin-left: 50px"
                 v-else>{{ '已选择' + selectedNumber + '个聊天' }}</span>
         </div>
 
+        <div class="friend-number" v-else>
+          <span style="color: black;font-size: 14px;margin-left: 20px" v-if="selectedNumber===0">请勾选需要添加的联系人</span>
+          <span style="color: black;font-size: 14px;margin-left: 20px"
+                v-else>{{ '已选择' + selectedNumber + '个联系人' }}</span>
+        </div>
       </el-col>
     </el-header>
     <el-container>
@@ -56,8 +61,8 @@
     </el-container>
     <el-footer height="20px">
       <div class="but-group">
-        <el-button type="success" size="mini" ref="send" :disabled="disable">发送</el-button>
-        <el-button size="mini">取消</el-button>
+        <el-button type="success" size="mini" ref="send" :disabled="disable" @click="send">发送</el-button>
+        <el-button size="mini" @click="$emit('closeTransferDialog')">取消</el-button>
       </div>
     </el-footer>
   </el-container>
@@ -72,6 +77,7 @@ export default {
   name: "FriendTransfer",
   props:{
     open:Boolean,
+    functionType:Number,
   },
   components: {
     FriendSearch,
@@ -149,7 +155,11 @@ export default {
       }
       this.selectedFriends=[]
       this.setFriends=new Set()
+    },
+    send(){
+      // TODO根据functionType的不同实现不同的功能
     }
+
   },
 
   watch: {

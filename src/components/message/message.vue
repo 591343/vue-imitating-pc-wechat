@@ -2,11 +2,17 @@
 <template>
   <div class="message">
     <header class="header">
-      <div class="friendname">
-        {{ selectedChat.remark === null || selectedChat.remark === '' ? selectedChat.nickname : selectedChat.remark }}
-      </div>
+      <el-col :span="22">
+        <div class="friendname">
+          {{ selectedChat.remark === null || selectedChat.remark === '' ? selectedChat.nickname : selectedChat.remark }}
+        </div>
+      </el-col>
+      <el-col :span="2">
+        <div class="chat-message">
+          <i class="el-icon-more" title="聊天信息" @click="$emit('openChatInfo')"></i>
+        </div>
+      </el-col>
     </header>
-
     <!--    单聊html-->
     <div class="message-wrapper" ref="list" v-if="selectedChat.type===0">
       <ul v-if="selectedChat">
@@ -127,6 +133,8 @@
         <el-button @click="dialogVisible = false" size="medium">取 消</el-button>
       </span>
     </el-dialog>
+
+
   </div>
 </template>
 
@@ -138,9 +146,11 @@ import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/cons
 import {getFriendListItem, getFriendsByFromIdAndToId, sendAddFriend} from "../../apis/friend.api";
 import {getChatListItem} from "../../apis/chat.api";
 import store from "../../store";
+import Chatinfo from "../info/chatinfofriend";
 
 export default {
   components: {
+    Chatinfo,
     "delivery-info": deliveryinfo
   },
   data() {
@@ -153,6 +163,7 @@ export default {
         permission: '0',
       },
       friendInfo: {},
+
     }
   },
   computed: {
@@ -289,6 +300,9 @@ export default {
         }
       })
     },
+    showChatInfo() {
+      this.$refs.chatInfo.handlePack()
+    }
   },
   filters: {
     // 将日期过滤为 hour:minutes
@@ -340,6 +354,9 @@ export default {
 
     .friendname
       font-size: 18px
+
+    .chat-message
+      cursor: pointer
 
   .message-wrapper
     min-height: 390px

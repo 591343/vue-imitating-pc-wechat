@@ -31,7 +31,7 @@
           <el-input type="textarea" placeholder="请输入文字" :maxlength="500" :rows="14" resize="none"
                     v-model="announcement" v-if="setUpGroupAnnouncementFlag"
                     @input="announcement===''?completeButtonDisabled=true:completeButtonDisabled=false"></el-input>
-          <div class="group-announcement-content" v-else>{{ announcement }}</div>
+          <div class="group-announcement-content" v-html="replace(announcement)" v-else></div>
         </div>
         <div slot="footer" v-if="showEditBtn" style="margin-left: 40%">
           <el-button size="mini" @click="editGroupAnnouncement" type="success">编 辑</el-button>
@@ -177,6 +177,17 @@ export default {
         this.$emit('update:dialogGroupAnnouncement', false)
         // this.dialogGroupAnnouncement=false
       }
+    },
+    //替换原群公告的网址为<a>标签
+    replace(content){
+      let match = content.match(/(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g);
+      console.log(match)
+      if(match!=null){
+        for(let i=0;i<match.length;i++){
+          content=content.replace(match[i],'<a href='+'\"'+match[i]+'\" style="color: #0000EE" target="_Blank">'+match[i]+'</a>')
+        }
+      }
+      return content
     },
     editGroupAnnouncement() {
       this.showEditBtn = false

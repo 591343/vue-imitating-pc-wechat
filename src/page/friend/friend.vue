@@ -25,8 +25,7 @@ export default {
 
   },
   computed: {
-    ...
-      mapState([
+    ...mapState([
         'selectFriendId',
       ]),
   },

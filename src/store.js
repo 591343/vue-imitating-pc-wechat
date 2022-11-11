@@ -4,6 +4,7 @@ import router from './router'
 import storage from "./utils/storage";
 import {addChatList, sendGroupChat, sendSingleChat} from "./apis/chat.api";
 import {getFriendsByFromIdAndToId} from "./apis/friend.api";
+import {FRIEND_TYPE, GROUP_TYPE, TEXT_CHAT_MESSAGE_TYPE} from "./services/constant";
 
 
 Vue.use(Vuex)
@@ -16,7 +17,8 @@ const state = {
   userName: "", // 记录的登录时的手机号
   // 输入的搜索值
   searchText: '',
-  friendSearchText:'',//专门在穿梭框中搜索朋友
+  friendSearchText: '',//专门在穿梭框中搜索朋友
+  memberSearchText: '',//群成员搜索
   // 当前登录用户
   user: {
     xiuxianUserId: '',
@@ -30,7 +32,8 @@ const state = {
   chatlist: [],
   // 好友列表
   friendlist: [],
-
+  // 群成员缓存
+  groupMembers: {},
   // 新的朋友列表
   newFriendList: [],
 
@@ -114,6 +117,40 @@ const mutations = {
   setUser(state, user) {
     state.user = user
   },
+  setupGroupName(state,value){
+    for(let i=0;i<state.friendlist.length;i++){
+      if(state.friendlist[i].friendXiuxianId===value.xiuxianGroupId){
+        console.log(state.friendlist[i])
+        Vue.set(state.friendlist[i],'groupName',value.groupName)
+        break
+      }
+    }
+  },
+  setGroupMember(state, value) {
+    const xiuxianGroupId = value.xiuxianGroupId
+    Vue.set(state.groupMembers,xiuxianGroupId,value)
+    // state.groupMembers[xiuxianGroupId] = value
+  },
+  setGroupAnnouncement(state, value) {
+    const xiuxianGroupId = value.xiuxianGroupId
+    if (state.groupMembers[xiuxianGroupId] === undefined) {
+      Vue.set(state.groupMembers,xiuxianGroupId,{
+        announcement: value
+      })
+      // state.groupMembers[xiuxianGroupId] = {
+      //   announcement: value
+      // }
+    } else {
+      Vue.set(state.groupMembers[xiuxianGroupId],'announcement',value)
+      // state.groupMembers[xiuxianGroupId].announcement = value
+    }
+  },
+  setGroupAnnouncementNotificationBarShowed(state, value) {
+    const xiuxianGroupId = value.xiuxianGroupId
+    Vue.set(state.groupMembers[xiuxianGroupId].announcement,'showed',value.showed)
+
+  },
+
   // 从localStorage 中获取数据
   initData(state) {
     let data = localStorage.getItem('vue-chat');
@@ -125,8 +162,11 @@ const mutations = {
   search(state, value) {
     state.searchText = value
   },
-  searchFriend(state,value){
-    state.friendSearchText=value
+  searchFriend(state, value) {
+    state.friendSearchText = value
+  },
+  searchGroupMember(state, value) {
+    state.memberSearchText = value
   },
   // 得知用户当前选择的是哪个对话。便于匹配对应的对话框
   selectSession(state, value) {
@@ -227,24 +267,25 @@ const mutations = {
         toId: state.selectId,
         fromTime: timestamp,
         toTime: timestamp,
-        chatMessageType: 0
+        chatMessageType: TEXT_CHAT_MESSAGE_TYPE
       }
 
 
       //好友
-      if (result.type === 0) {
+      if (result.type === FRIEND_TYPE) {
         state.chatlist.unshift({
           friendXiuxianId: result.friendXiuxianId,
           nickname: result.nickname,
           profile: result.profile,
           remark: result.remark,
-          type: 0,
+          type: FRIEND_TYPE,
           messages: [
             {
               content: '', //空消息便于显示
               remoteMediaUrl: '',
               date: timestamp + "",
-              chatMessageType: 0,
+              chatMessageType: TEXT_CHAT_MESSAGE_TYPE,
+              self: true
             }
           ],
           index: 1
@@ -260,17 +301,25 @@ const mutations = {
           nickname: result.groupName,
           profile: result.groupProfile,
           remark: result.remark,
-          type: 1,
+          type: GROUP_TYPE,
           messages: [
             {
+              chatUser: {
+                xiuxianUserId: state.user.xiuxianUserId,
+                profile: state.user.profile,
+                nickname: state.user.nickname,
+                remakr: ''
+              },
               content: '',
               remoteMediaUrl: '',
               date: timestamp + "",
-              chatMessageType: 0,
+              chatMessageType: TEXT_CHAT_MESSAGE_TYPE,
+              self: true,
             }
           ],
           index: 1
         })
+
         sendGroupChat(chatMessage).then(res => {
           console.log("群聊消息已被服务器接收到")
         }).catch(error => {
@@ -336,7 +385,7 @@ const getters = {
     });
     return friends
   },
-  searchedFriends(state){
+  searchedFriends(state) {
     return state.friendlist.filter(friends => {
       var res = false
       if (friends.type === 0) {
@@ -357,6 +406,7 @@ const getters = {
     if (session === undefined) {
       session = null
     }
+
     return session
   },
   // 通过当前选择是哪个好友匹配相应的好友
@@ -388,6 +438,33 @@ const getters = {
   },
   getNewFriendList(state) {
     return state.newFriendList
+  },
+  selectedGroup(state) {
+
+    let groupMember = state.groupMembers[state.selectId]
+    if (groupMember !== undefined) {
+      if (groupMember.hasOwnProperty('xiuxianUsers')) {
+        let members = groupMember.xiuxianUsers.filter(member => member.nickname.includes(state.memberSearchText));
+        let group = {
+          announcement: groupMember.announcement,
+          xiuxianGroupId: groupMember.xiuxianGroupId,
+          managerId: groupMember.managerId,
+          groupName: groupMember.groupName,
+          xiuxianUsers: members
+        }
+
+
+        return group
+      } else {
+        let group = {
+          announcement: groupMember.announcement
+        }
+
+        return group
+      }
+    } else {
+      return null
+    }
   }
 }
 
@@ -401,6 +478,11 @@ const actions = {
   searchFriend: ({commit}, value) => {
     setTimeout(() => {
       commit('searchFriend', value)
+    }, 100)
+  },
+  searchGroupMember: ({commit}, value) => {
+    setTimeout(() => {
+      commit('searchGroupMember', value)
     }, 100)
   },
   selectSession: ({commit}, value) => commit('selectSession', value),

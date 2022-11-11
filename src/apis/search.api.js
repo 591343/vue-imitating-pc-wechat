@@ -58,7 +58,18 @@ export function isXiuxianUserExist(xiuxianUserId){
       "xiuxianUserId":xiuxianUserId,
     }
   })
+}
 
+// 获取该群一共有多少人
+export function groupPersonNumber(xiuxianGroupId){
+  return request({
+    url: '/xiuxian-chat/api/xiuxiangroup/groupnumber',
+    method: 'get',
+    params:{
+      // 具体传参（键）要看后台要求
+      "xiuxianGroupId":xiuxianGroupId,
+    }
+  })
 }
 
 

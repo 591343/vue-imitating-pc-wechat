@@ -39,10 +39,10 @@
 
     <div class="send-info" v-show="userInfo.xiuxianUserId!==user.xiuxianUserId">
       <div class="add-friend" @click="sendMessage(userInfo.xiuxianUserId)" v-if="isFriend(userInfo.xiuxianUserId)">
-        <span style="font-size: 5px">发消息</span>
+        <span style="font-size: 12px">发消息</span>
       </div>
       <div class="send-message" style="margin-top: 20px" @click="addFriend(userInfo.xiuxianUserId)" v-else>
-        <span style="font-size: 5px">添加到通讯录</span>
+        <span style="font-size: 12px">添加到通讯录</span>
       </div>
     </div>
 
@@ -164,7 +164,6 @@ export default {
       position: relative
       flex: 1
       margin-left: 10px
-
       .name
         display: inline-block
         font-size: 14px
@@ -188,7 +187,7 @@ export default {
         background-size: cover
 
       .wxid, .area, .nickname
-        font-size: 3px
+        font-size: 11px
         color: #8c939d
 
 

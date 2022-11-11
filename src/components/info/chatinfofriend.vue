@@ -70,13 +70,14 @@
 
 </template>
 <script>
-import {deleteChatListItemRes} from "../../apis/chat.api";
+
 import {mapGetters, mapState} from "vuex";
 import FriendTransfer from "../friend/friendtransfer";
 import {ADD_FRIEND_FUNCTION} from "../../services/constant"
+import GroupMemberSearch from "../search/groupmembersearch";
 export default {
   name: 'ChatInfoFriend',
-  components: {FriendTransfer},
+  components: {GroupMemberSearch, FriendTransfer},
   data() {
     return {
       activationTopChat: false,
@@ -84,6 +85,9 @@ export default {
       dialogAddFriends:false,
       functionType:ADD_FRIEND_FUNCTION
     }
+  },
+  created() {
+    console.log('person create')
   },
   computed: {
     ...mapGetters([

@@ -37,7 +37,7 @@
           <div v-if="item.type===0" class="remark">
             {{ item.remark === null || item.remark === "" ? item.nickname : item.remark }}
           </div>
-          <div v-else class="remark">{{ item.remark === null ? item.groupName : item.remark }}</div>
+          <div v-else class="remark">{{ item.remark === null|| item.remark === "" ? item.groupName : item.remark }}</div>
         </div>
       </li>
     </ul>

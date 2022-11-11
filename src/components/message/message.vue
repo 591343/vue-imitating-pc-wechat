@@ -5,6 +5,7 @@
       <el-col :span="22">
         <div class="friendname">
           {{ selectedChat.remark === null || selectedChat.remark === '' ? selectedChat.nickname : selectedChat.remark }}
+          {{ selectedChat.hasOwnProperty('number') && selectedChat.number !== 0 ? '(' + selectedChat.number + ')' : '' }}
         </div>
       </el-col>
       <el-col :span="2">
@@ -13,6 +14,21 @@
         </div>
       </el-col>
     </header>
+    <div class="notification-bar"
+         v-if="selectedGroup!=null&&selectedGroup.hasOwnProperty('announcement')?selectedGroup.announcement.showed:false"
+         @click="showGroupAnnouncement">
+      <el-row class="notification-content">
+        <el-col :span="1" style="height: 30px">
+          <img width="13" height="13" style="margin-top: 7px" :src="'static/images/icons/group_announcement.png'"/>
+        </el-col>
+        <el-col :span="22" style="height: 30px">
+          <span class="content">{{ selectedGroup.announcement.content }}</span>
+        </el-col>
+        <el-col :span="1" style="height: 30px">
+          <i class="el-icon-arrow-right" style="float: right;margin-top: 7px"></i>
+        </el-col>
+      </el-row>
+    </div>
     <!--    单聊html-->
     <div class="message-wrapper" ref="list" v-if="selectedChat.type===0">
       <ul v-if="selectedChat">
@@ -52,6 +68,7 @@
 
     <!--    群聊html-->
     <div class="message-wrapper" ref="list" v-else>
+
       <ul v-if="selectedChat">
         <li v-for="(item,i) in selectedChat.messages" v-show="showMessage(item)" class="message-item" :key="i">
           <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
@@ -79,7 +96,7 @@
 
               <div class="text" v-html="replaceFace(item.content)"></div>
             </div>
-            <div class="img-content" v-else>
+            <div class="img-content" v-else-if="item.chatMessageType===1">
               <el-image
                 style="width: 100px; height: 100px"
                 :src="item.remoteMediaUrl"
@@ -134,22 +151,25 @@
       </span>
     </el-dialog>
 
-
+    <!--群公告-->
+    <group-announcement  :dialogGroupAnnouncement.sync="dialogGroupAnnouncement"></group-announcement>
   </div>
 </template>
 
 <script>
-import {mapGetters, mapState} from 'vuex'
-import {searchFriend} from "../../apis/search.api";
+import {mapGetters, mapMutations, mapState} from 'vuex'
+import {groupPersonNumber, searchFriend} from "../../apis/search.api";
 import deliveryinfo from "../info/deliveryinfo";
 import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/constant";
 import {getFriendListItem, getFriendsByFromIdAndToId, sendAddFriend} from "../../apis/friend.api";
 import {getChatListItem} from "../../apis/chat.api";
-import store from "../../store";
 import Chatinfo from "../info/chatinfofriend";
+import GroupAnnouncement from "../info/groupannouncement";
+import {groupMembers} from "../../apis/group";
 
 export default {
   components: {
+    GroupAnnouncement,
     Chatinfo,
     "delivery-info": deliveryinfo
   },
@@ -163,6 +183,7 @@ export default {
         permission: '0',
       },
       friendInfo: {},
+      dialogGroupAnnouncement:false,
 
     }
   },
@@ -170,27 +191,33 @@ export default {
     ...mapGetters([
       'selectedChat',
       'messages',
-
+      'selectedGroup'
     ]),
     ...mapState([
       'user',
       'emojis',
       'friendlist',
-      'chatlist'
+      'chatlist',
+      'selectId',
+      'groupMembers'
     ])
   },
   mounted() {
+
     //  在页面加载时让信息滚动到最下面
     setTimeout(() => this.$refs.list.scrollTop = this.$refs.list.scrollHeight, 0)
   },
   watch: {
     // 发送信息后,让信息滚动到最下面
     messages() {
-
       setTimeout(() => this.$refs.list.scrollTop = this.$refs.list.scrollHeight, 0)
     }
   },
   methods: {
+    ...mapMutations([
+      'setGroupAnnouncementNotificationBarShowed'
+    ]),
+
     //  在发送信息之后，将输入的内容中属于表情的部分替换成emoji图片标签
     //  再经过v-html 渲染成真正的图片
     replaceFace(con) {
@@ -300,6 +327,36 @@ export default {
         }
       })
     },
+    //显示群公告
+    showGroupAnnouncement() {
+
+      const value = {
+        xiuxianGroupId: this.selectId,
+        showed: false
+      }
+
+      this.setGroupAnnouncementNotificationBarShowed(value)
+      this.$forceUpdate()
+      this.dialogGroupAnnouncement=true
+
+    },
+    getGroupMembers() {
+      //如果为群组类型
+      if (this.selectedChat.type === 1) {
+        //先查看是否有该群组成员缓存，没有的话获取群成员
+        if (!this.groupMembers.hasOwnProperty(this.selectId)||!this.groupMembers[this.selectId].hasOwnProperty('xiuxianUsers')) {
+          groupMembers(this.selectId).then(res => {
+            if (res.data.data != null) {
+              this.setGroupMember(res.data.data)
+              this.$message({
+                message: '群成员数据加载完成,可点击查看',
+                type: 'success'
+              });
+            }
+          })
+        }
+      }
+    },
     showChatInfo() {
       this.$refs.chatInfo.handlePack()
     }
@@ -357,6 +414,29 @@ export default {
 
     .chat-message
       cursor: pointer
+
+  .notification-bar
+    width: 98%
+    height: 30px
+    border-bottom: 1px solid #e7e7e7
+    padding: 0 5px 0 5px
+
+    .notification-content
+      cursor: pointer
+      line-height: 30px
+
+      background: white
+      height: 100%
+
+      .content
+        width: 400px
+        overflow: hidden
+        white-space: nowrap
+        text-overflow: ellipsis
+        word-break: break-all
+        font-size: 14px
+        display: -moz-inline-box;
+        display: inline-block;
 
   .message-wrapper
     min-height: 390px

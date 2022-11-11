@@ -17,11 +17,11 @@ export function newFriendNoticeMessage(xiuxianUserId){
 }
 
 //回复验证消息
-export function sendValidMessageToUser(validMessage){
+export function sendValidMessageToUser(data){
   return request({
     url: '/xiuxian-chat/api/xiuxiannoticemessage/send/validmessage',
     method: 'post',
-    data:validMessage
+    data:data
   })
 }
 

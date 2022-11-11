@@ -15,6 +15,8 @@ import {mapActions, mapGetters, mapMutations, mapState} from 'vuex'
 import {getChatList} from '../apis/chat.api'
 import {getGroupList, getFriendList} from "../apis/friend.api";
 import {connect} from "../apis/websocket";
+import {groupAnnouncement, groupAnnouncementReceived} from "../apis/group_announcement";
+
 
 export default {
   components: {
@@ -24,7 +26,8 @@ export default {
 
     ...mapState([
       'user',
-      'friendlist'
+      'friendlist',
+      'groupMembers'
     ]),
 
   },
@@ -64,8 +67,31 @@ export default {
     })
 
     getGroupList(xiuxianUserId).then((res)=>{
-      friendList.push.apply(friendList, res.data.data.groupList)
+      let groups = res.data.data.groupList;
+      friendList.push.apply(friendList,groups)
       this.setFriendList(friendList)
+      for(let i=0;i<groups.length;i++){
+        const group=groups[i]
+        groupAnnouncementReceived(group.friendXiuxianId,this.user.xiuxianUserId).then(res=>{
+          if(!res.data.data){
+            groupAnnouncement(group.friendXiuxianId).then(res=>{
+              if(res.data.data!=null){
+                delete  res.data.data.id
+                this.setGroupAnnouncement(res.data.data)
+                const value={
+                  xiuxianGroupId:group.friendXiuxianId,
+                  showed:true
+                }
+                this.setGroupAnnouncementNotificationBarShowed(value)
+              }
+            }).catch(error=>{
+              this.$message.error(error)
+            })
+          }
+        }).catch(error=>{
+          this.$message.error(error)
+        })
+      }
       if(connected){
         connect()//获取朋友列表完成后进行订阅
       }else {
@@ -83,7 +109,9 @@ export default {
   methods: {
     ...mapMutations([
       'setChatList',
-      'setFriendList'
+      'setFriendList',
+      'setGroupAnnouncement',
+      'setGroupAnnouncementNotificationBarShowed'
     ])
   },
 }

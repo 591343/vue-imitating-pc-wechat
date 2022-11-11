@@ -5,10 +5,12 @@ import storage from "../utils/storage";
 //
 // import qs from 'qs'
 // create an axios instance
+
 const service = axios.create({
   // index.js设置了代理(解决跨域)
   baseURL: "http://localhost:90", // url = base url + request url
   timeout: 10000, // request timeout
+
 })
 
 //添加请求拦截器，若token存在则在请求头中加token，不存在也继续请求

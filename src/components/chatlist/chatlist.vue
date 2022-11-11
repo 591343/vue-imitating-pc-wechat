@@ -16,11 +16,10 @@
             <p class="name">{{ item.remark === null || item.remark === '' ? item.nickname : item.remark }}</p>
             <span class="time">{{ item.messages[item.messages.length - 1].date | time }}</span>
             <p class="lastmsg">{{
-                item.messages[item.messages.length - 1].chatMessageType === 0 ? item.messages[item.messages.length - 1].content :
+                item.messages[item.messages.length - 1].chatMessageType === textChatMessageType ? item.messages[item.messages.length - 1].content :
                   "[图片]"
               }}</p>
             </div>
-
         </li>
     </ul>
 
@@ -41,14 +40,15 @@
 "
 <script>
 import {mapState, mapActions, mapGetters} from 'vuex'
-import {deleteChatListItemRes, getChatList} from '../../apis/chat.api'
-import store from "../../store";
+import {deleteChatListItemRes} from '../../apis/chat.api'
+import {TEXT_CHAT_MESSAGE_TYPE} from "../../services/constant";
 
 export default {
   data() {
     return {
       menuVisible: false,
       selectedFriendXiuxianId:'',
+      textChatMessageType:TEXT_CHAT_MESSAGE_TYPE
     }
   },
   computed: {
@@ -65,6 +65,7 @@ export default {
   created() {
     //获取chatlist
     const now = new Date();
+
   },
   methods: {
     ...mapActions([
@@ -85,7 +86,7 @@ export default {
       this.menuVisible = false
       document.removeEventListener('click', this.foo) // 要及时关掉监听，不关掉的是一个坑，不信你试试，虽然前台显示的时候没有啥毛病，加一个alert你就知道了
     },
-    // 删除聊天
+    // 删除聊天s
     deleteChat(){
       this.$confirm('删除聊天后，将同时删除聊天记录，包括聊天中的图片等内容。', '', {
         confirmButtonText: '删除',

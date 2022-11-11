@@ -162,7 +162,6 @@
 
 
     <el-dialog
-
       :visible.sync="dialogRecommendToFriend"
       width="550px"
       :modal="false"

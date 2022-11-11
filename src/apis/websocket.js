@@ -9,8 +9,8 @@ import {addChatList, sendPing} from "./chat.api";
 import router from "../router";
 import {
   ADD_FRIEND_NOTICE,
-  ADD_FRIEND_SUCCESS_NOTICE,
-  SEND_MESSAGE_NOTICE,
+  ADD_FRIEND_SUCCESS_NOTICE, FRIEND_TYPE, GROUP_TYPE, IMAGE_CHAT_MESSAGE_TYPE,
+  SEND_MESSAGE_NOTICE, TEXT_CHAT_MESSAGE_TYPE,
   WAITING_FOR_RECEIVE_STATUS
 } from "../services/constant";
 import {searchFriend} from "./search.api";
@@ -155,10 +155,10 @@ export function connect() {
             date: fromTime + "",
             self: false
           }
-          if (repObj.chatMessageType === 0) {
+          if (repObj.chatMessageType === TEXT_CHAT_MESSAGE_TYPE) {
             message.content = repObj.content
             message.chatMessageType = repObj.chatMessageType
-          } else {
+          } else if(repObj.chatMessageType === IMAGE_CHAT_MESSAGE_TYPE){
             message.remoteMediaUrl = repObj.remoteMediaUrl
             message.chatMessageType = repObj.chatMessageType
           }
@@ -167,7 +167,7 @@ export function connect() {
             nickname: friend.nickname,
             profile: friend.profile,
             remark: friend.remark,
-            type: 0,
+            type: FRIEND_TYPE,
             messages: [
               message
             ],
@@ -176,13 +176,13 @@ export function connect() {
           let chatList = {
             selfXiuxianId: store.getters.getUser.xiuxianUserId,
             friendXiuxianId: repObj.fromId,
-            type: 0
+            type: FRIEND_TYPE
           }
           addChatList(chatList)
           store.state.selectId = repObj.fromId
           router.push({path: '/chat'})
         } else {
-          if (repObj.chatMessageType === 0) {
+          if (repObj.chatMessageType === TEXT_CHAT_MESSAGE_TYPE) {
             result.messages.push({
               content: repObj.content,
               remoteMediaUrl: "",
@@ -190,7 +190,7 @@ export function connect() {
               chatMessageType: repObj.chatMessageType,
               self: false
             });
-          } else {
+          } else if(repObj.chatMessageType === IMAGE_CHAT_MESSAGE_TYPE){
             result.messages.push({
               content: "",
               remoteMediaUrl: repObj.remoteMediaUrl,
@@ -220,7 +220,7 @@ export function connect() {
     });
 
     //获取群组
-    let friendlist = store.state.friendlist.filter(friends => friends.type === 1)
+    let friendlist = store.state.friendlist.filter(friends => friends.type === GROUP_TYPE)
 
     for (let i = 0; i < friendlist.length; i++) {
       stompClient.subscribe('/topic/info/' + friendlist[i].friendXiuxianId, (response) => {
@@ -253,10 +253,10 @@ export function connect() {
               date: fromTime + "",
               self: false
             }
-            if (repObj.chatMessageType === 0) {
+            if (repObj.chatMessageType === TEXT_CHAT_MESSAGE_TYPE) {
               message.content = repObj.content
               message.chatMessageType = repObj.chatMessageType
-            } else {
+            } else if(repObj.chatMessageType === IMAGE_CHAT_MESSAGE_TYPE){
               message.remoteMediaUrl = repObj.remoteMediaUrl
               message.chatMessageType = repObj.chatMessageType
             }
@@ -265,7 +265,7 @@ export function connect() {
               nickname: friend.groupName,
               profile: friend.groupProfile,
               remark: friend.remark,
-              type: 1,
+              type: GROUP_TYPE,
               messages: [
                 message
               ],
@@ -274,13 +274,13 @@ export function connect() {
             let chatList = {
               selfXiuxianId: store.getters.getUser.xiuxianUserId,
               friendXiuxianId: repObj.toId,
-              type: 1
+              type: GROUP_TYPE
             }
             addChatList(chatList)
             store.state.selectId = repObj.toId
             router.push({path: '/chat'})
           } else {
-            if (repObj.chatMessageType === 0) {
+            if (repObj.chatMessageType === TEXT_CHAT_MESSAGE_TYPE) {
               result.messages.push({
                 chatUser: repObj.chatUser,
                 content: repObj.content,
@@ -289,7 +289,7 @@ export function connect() {
                 chatMessageType: repObj.chatMessageType,
                 self: false
               });
-            } else {
+            } else if(repObj.chatMessageType === IMAGE_CHAT_MESSAGE_TYPE){
               result.messages.push({
                 chatUser: repObj.chatUser,
                 content: "",

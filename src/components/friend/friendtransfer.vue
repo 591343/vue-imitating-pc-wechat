@@ -13,23 +13,22 @@
         </div>
 
         <div class="friend-number" v-else>
-          <span style="color: black;font-size: 14px;margin-left: 20px" v-if="selectedNumber===0">请勾选需要添加的联系人</span>
+
+          <span style="color: black;font-size: 14px;margin-left: 20px" v-if="selectedNumber===0">{{functionType===removeFunctionType?'请勾选需要删除的群成员':'请勾选需要添加的联系人'}}</span>
           <span style="color: black;font-size: 14px;margin-left: 20px"
-                v-else>{{ '已选择' + selectedNumber + '个联系人' }}</span>
+                v-else>{{functionType===removeFunctionType?'已选择' + selectedNumber + '个群成员':'已选择' + selectedNumber + '个联系人' }}</span>
         </div>
       </el-col>
     </el-header>
     <el-container>
       <el-aside class="left" width="250px">
         <ul>
-          <li v-for="item in searchedFriends " class="left-frienditem" :key="item.friendXiuxianId">
+          <li v-for="item in searchedFriends " class="left-frienditem" :key="item.friendXiuxianId" v-show="item.type===0">
             <div class="left-friend-info">
-              <img v-if="item.type===0" class="left-avatar" width="36" height="36" :src="item.profile">
-              <img v-else class="left-avatar" width="36" height="36" :src="item.groupProfile">
-              <div v-if="item.type===0" class="left-remark">
+              <img class="left-avatar" width="36" height="36" :src="item.profile">
+              <div  class="left-remark">
                 {{ item.remark === null || item.remark === "" ? item.nickname : item.remark }}
               </div>
-              <div v-else class="left-remark">{{ item.remark === null ? item.groupName : item.remark }}</div>
             </div>
             <div class="left-right-checkbox">
               <input class="left-checkbox" type="checkbox" :id="item.friendXiuxianId"
@@ -42,13 +41,10 @@
         <ul>
           <li v-for="(item) in selectedFriends " class="right-frienditem" :key="item.friendXiuxianId">
             <div class="right-friend-info">
-              <img v-if="item.type===0" class="right-avatar" width="36" height="36" :src="item.profile">
-              <img v-else class="right-avatar" width="36" height="36" :src="item.groupProfile">
-              <div v-if="item.type===0" class="right-remark">
+              <img class="right-avatar" width="36" height="36" :src="item.profile">
+              <div class="right-remark">
                 {{ item.remark === null || item.remark === "" ? item.nickname : item.remark }}
               </div>
-              <div v-else class="right-remark">{{ item.remark === null ? item.groupName : item.remark }}</div>
-
             </div>
             <div class="right-right-checkbox">
               <i class="el-icon-error delete-but" @click="deleteSelectedFriend(item.friendXiuxianId)"></i>
@@ -72,6 +68,7 @@
 
 import FriendSearch from "../search/friendsearch";
 import {mapGetters, mapState} from "vuex";
+import {REMOVE_MEMBER_FROM_GROUP_FUNCTION} from "../../services/constant";
 
 export default {
   name: "FriendTransfer",
@@ -88,7 +85,8 @@ export default {
       selectedNumber: 0,
       selectedFriends: [],
       setFriends: undefined,
-      disable:true
+      disable:true,
+      removeFunctionType:REMOVE_MEMBER_FROM_GROUP_FUNCTION
     };
   },
 
@@ -116,8 +114,9 @@ export default {
           }
         }
         if (index !== -1) {
+          console.log(this.selectedFriends.length,'find')
+          this.setFriends.delete(this.selectedFriends[index].friendXiuxianId)
           this.selectedFriends.splice(index, 1)
-          this.setFriends.remove(this.selectedFriends[index].friendXiuxianId)
         }
       } else {
         this.selectedFriends.push(item)
@@ -146,7 +145,6 @@ export default {
 
     // 在关闭推荐给朋友这个弹窗框后，重置所有数据
     resetData() {
-
       this.$refs.friendSearch.del()
       this.selectedNumber=0
       for(let i=0;i<this.selectedFriends.length;i++){
@@ -157,7 +155,8 @@ export default {
       this.setFriends=new Set()
     },
     send(){
-      // TODO根据functionType的不同实现不同的功能
+      // TODO根据functionType的不同实现不同的功能,functionType定义在了constant里面
+
     }
 
   },
@@ -233,7 +232,7 @@ export default {
 
   .right
     height: 345px
-    padding: 20px 0px 20px 20px
+    padding: 0 0 20px 20px
 
     .right-frienditem
       display: flex

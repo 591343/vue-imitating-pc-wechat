@@ -51,47 +51,47 @@ export function getFriendsByFromIdAndToId(fromId,toId){
   })
 }
 
-export function sendAddFriend(addFriend){
+export function sendAddFriend(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianfriend/addfriend',
     method: 'post',
-    data:addFriend
+    data:data
   })
 }
 
 
 //接收添加好友申请
-export function acceptFriend(acceptFriendData){
+export function acceptFriend(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianfriend/acceptfriend',
     method: 'post',
-    data:acceptFriendData
+    data:data
   })
 }
 
 //删除朋友
-export function deleteFriendApi(friendListItemRel){
+export function deleteFriendApi(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianfriend/deletefriend',
     method: 'post',
-    data:friendListItemRel
+    data:data
   })
 }
 
 //修改朋友的备注信息
-export function changeFriendsRemark(changeFriendRemark){
+export function changeFriendsRemark(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianfriend/changeremark',
     method: 'post',
-    data:changeFriendRemark
+    data:data
   })
 }
 
 //修改朋友的备注信息
-export function changeFriendsPermission(changeFriendPermission){
+export function changeFriendsPermission(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianfriend/changepermission',
     method: 'post',
-    data:changeFriendPermission
+    data:data
   })
 }

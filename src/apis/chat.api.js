@@ -27,28 +27,28 @@ export function getChatListItem(selfXiuxianId,friendXiuxianId){
   })
 }
 
-export function addChatList(chatList){
+export function addChatList(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianchalist/chatlist',
     method: 'post',
-    data:chatList
+    data:data
   })
 }
 
 
-export function sendSingleChat(chatMessage){
+export function sendSingleChat(data){
   return request({
     url: '/xiuxian-websocket/api/ws/sendMsgToUser',
     method: 'post',
-    data:chatMessage
+    data:data
   })
 }
 
-export function sendGroupChat(chatMessage){
+export function sendGroupChat(data){
   return request({
     url: '/xiuxian-websocket/api/ws/sendMsgToGroup',
     method: 'post',
-    data:chatMessage
+    data:data
   })
 }
 
@@ -75,10 +75,7 @@ export function deleteChatListItemRes(data){
   return request({
     url: '/xiuxian-chat/api/xiuxianchalist/delete/chatlistitem',
     method: 'post',
-    data:{
-      "selfXiuxianId":data.selfXiuxianId,
-      "friendXiuxianId":data.friendXiuxianId
-    }
+    data:data
   })
 }
 

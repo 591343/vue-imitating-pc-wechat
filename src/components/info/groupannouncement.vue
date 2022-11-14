@@ -156,7 +156,6 @@ export default {
             showed: true
           }
           this.setGroupAnnouncementNotificationBarShowed(value)
-
         })
       }).catch((error) => {
         this.$message.error(error)
@@ -181,7 +180,6 @@ export default {
     //替换原群公告的网址为<a>标签
     replace(content){
       let match = content.match(/(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g);
-      console.log(match)
       if(match!=null){
         for(let i=0;i<match.length;i++){
           content=content.replace(match[i],'<a href='+'\"'+match[i]+'\" style="color: #0000EE" target="_Blank">'+match[i]+'</a>')

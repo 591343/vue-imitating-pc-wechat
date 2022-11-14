@@ -167,6 +167,7 @@ import Chatinfo from "../info/chatinfofriend";
 import GroupAnnouncement from "../info/groupannouncement";
 import {groupMembers} from "../../apis/group";
 
+
 export default {
   components: {
     GroupAnnouncement,
@@ -215,7 +216,8 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'setGroupAnnouncementNotificationBarShowed'
+      'setGroupAnnouncementNotificationBarShowed',
+      'setGroupMember'
     ]),
 
     //  在发送信息之后，将输入的内容中属于表情的部分替换成emoji图片标签
@@ -329,16 +331,12 @@ export default {
     },
     //显示群公告
     showGroupAnnouncement() {
-
       const value = {
         xiuxianGroupId: this.selectId,
         showed: false
       }
-
+      this.getGroupMembers()
       this.setGroupAnnouncementNotificationBarShowed(value)
-      this.$forceUpdate()
-      this.dialogGroupAnnouncement=true
-
     },
     getGroupMembers() {
       //如果为群组类型
@@ -352,9 +350,14 @@ export default {
                 message: '群成员数据加载完成,可点击查看',
                 type: 'success'
               });
+              this.dialogGroupAnnouncement=true
+              // this.$forceUpdate()
             }
           })
+          return
         }
+        this.dialogGroupAnnouncement=true
+        // this.$forceUpdate()
       }
     },
     showChatInfo() {

@@ -117,37 +117,44 @@ const mutations = {
   setUser(state, user) {
     state.user = user
   },
-  setupGroupName(state,value){
-    for(let i=0;i<state.friendlist.length;i++){
-      if(state.friendlist[i].friendXiuxianId===value.xiuxianGroupId){
-        console.log(state.friendlist[i])
-        Vue.set(state.friendlist[i],'groupName',value.groupName)
+  setupGroupName(state, value) {
+    for (let i = 0; i < state.friendlist.length; i++) {
+      if (state.friendlist[i].friendXiuxianId === value.xiuxianGroupId) {
+
+        Vue.set(state.friendlist[i], 'groupName', value.groupName)
         break
       }
     }
   },
   setGroupMember(state, value) {
     const xiuxianGroupId = value.xiuxianGroupId
-    Vue.set(state.groupMembers,xiuxianGroupId,value)
-    // state.groupMembers[xiuxianGroupId] = value
+    let announcement = undefined
+    if (state.groupMembers[xiuxianGroupId].hasOwnProperty('announcement')) {
+      announcement = state.groupMembers[xiuxianGroupId].announcement
+    }
+    Vue.set(state.groupMembers, xiuxianGroupId, value)
+    if (announcement !== undefined) {
+      Vue.set(state.groupMembers[xiuxianGroupId], 'announcement', announcement)
+    }
+
   },
   setGroupAnnouncement(state, value) {
     const xiuxianGroupId = value.xiuxianGroupId
     if (state.groupMembers[xiuxianGroupId] === undefined) {
-      Vue.set(state.groupMembers,xiuxianGroupId,{
+      Vue.set(state.groupMembers, xiuxianGroupId, {
         announcement: value
       })
       // state.groupMembers[xiuxianGroupId] = {
       //   announcement: value
       // }
     } else {
-      Vue.set(state.groupMembers[xiuxianGroupId],'announcement',value)
+      Vue.set(state.groupMembers[xiuxianGroupId], 'announcement', value)
       // state.groupMembers[xiuxianGroupId].announcement = value
     }
   },
   setGroupAnnouncementNotificationBarShowed(state, value) {
     const xiuxianGroupId = value.xiuxianGroupId
-    Vue.set(state.groupMembers[xiuxianGroupId].announcement,'showed',value.showed)
+    Vue.set(state.groupMembers[xiuxianGroupId].announcement, 'showed', value.showed)
 
   },
 
@@ -442,6 +449,7 @@ const getters = {
   selectedGroup(state) {
 
     let groupMember = state.groupMembers[state.selectId]
+
     if (groupMember !== undefined) {
       if (groupMember.hasOwnProperty('xiuxianUsers')) {
         let members = groupMember.xiuxianUsers.filter(member => member.nickname.includes(state.memberSearchText));
@@ -452,7 +460,6 @@ const getters = {
           groupName: groupMember.groupName,
           xiuxianUsers: members
         }
-
 
         return group
       } else {

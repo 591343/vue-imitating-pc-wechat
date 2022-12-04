@@ -11,8 +11,13 @@
 export const TEXT_CHAT_MESSAGE_TYPE=0;
 // 图片消息
 export const IMAGE_CHAT_MESSAGE_TYPE=1;
-//公群公告消息
-export const GROUP_ANNOUNCEMENT_MESSAGE_TYPE=2;
+// 子消息(用于在聊天框内小字显示)
+export const SUB_MESSAGE_TYPE=2;
+//邀请成员加入
+export const SUB_MESSAGE_GROUP_MEMBER_ADD=0;
+//将成员移出群聊
+export const SUB_MESSAGE_GROUP_MEMBER_REMOVE=1;
+
 // 朋友类型
 export const FRIEND_TYPE = 0;
 // 群组类型
@@ -31,6 +36,14 @@ export const ADD_GROUP_NOTICE=3;
 export const ADD_FRIEND_SUCCESS_NOTICE=4;
 //群公告发布通知
 export const GROUP_ANNOUNCEMENT_NOTICE=5;
+//邀请加入群聊通知
+export const INVITE_JOIN_GROUP_NOTICE=6;
+//有人加入群聊通知
+export const SOMEONE_JOIN_GROUP_NOTICE=7;
+//移出群成员通知
+export const REMOVE_FROM_GROUP_NOTICE=8;
+//有人被移除群聊
+export const SOMEONE_REMOVE_GROUP_NOTICE=9;
 //消息发送成功状态
 export const SUCCESS_SEND_STATUS=0;
 //等待接受状态

@@ -4,21 +4,23 @@
   <div class="msglist">
 
     <ul>
+
         <li v-for="item in searchedChatlist" :key="item.friendXiuxianId" class="sessionlist"
             :class="{ active: item.friendXiuxianId === selectId }"
             @click="selectSession(item.friendXiuxianId)" slot="reference" @contextmenu.prevent="rightClick($event,item.friendXiuxianId)">
 
+
           <div class="list-left">
-            <img class="avatar" width="42" height="42"
-                 :alt="item.remark===null||item.remark===''?item.nickname:item.remark" :src="item.profile">
+            <el-badge is-dot>
+              <img class="avatar" width="42" height="42"
+                   :alt="item.remark===null||item.remark===''?item.nickname:item.remark" :src="item.profile">
+            </el-badge>
           </div>
+
           <div class="list-right">
             <p class="name">{{ item.remark === null || item.remark === '' ? item.nickname : item.remark }}</p>
-            <span class="time">{{ item.messages[item.messages.length - 1].date | time }}</span>
-            <p class="lastmsg">{{
-                item.messages[item.messages.length - 1].chatMessageType === textChatMessageType ? item.messages[item.messages.length - 1].content :
-                  "[图片]"
-              }}</p>
+            <span class="time">{{ item | time }}</span>
+            <p class="lastmsg">{{item | lastMsg}}</p>
             </div>
         </li>
     </ul>
@@ -37,18 +39,17 @@
   </div>
 
 </template>
-"
+
 <script>
 import {mapState, mapActions, mapGetters} from 'vuex'
 import {deleteChatListItemRes} from '../../apis/chat.api'
-import {TEXT_CHAT_MESSAGE_TYPE} from "../../services/constant";
+import {IMAGE_CHAT_MESSAGE_TYPE, SUB_MESSAGE_TYPE, TEXT_CHAT_MESSAGE_TYPE} from "../../services/constant";
 
 export default {
   data() {
     return {
       menuVisible: false,
-      selectedFriendXiuxianId:'',
-      textChatMessageType:TEXT_CHAT_MESSAGE_TYPE
+      selectedFriendXiuxianId:''
     }
   },
   computed: {
@@ -117,8 +118,8 @@ export default {
   //filters用于文本格式化
   filters: {
     // 将日期过滤为 hour:minutes
-    time(date) {
-
+    time(item) {
+      let date=item.messages.length>0?item.messages[item.messages.length - 1].date:item.startTime
       if (typeof date === 'string') {
         let timestamp = parseInt(date);
         date = new Date(timestamp);
@@ -137,6 +138,19 @@ export default {
       }
 
       return date.getFullYear() + "/" + date.getMonth() + "/" + date.getDate()
+    },
+    lastMsg(item){
+      let content=""
+      if(item.messages.length>0){
+        if(item.messages[item.messages.length - 1].chatMessageType === TEXT_CHAT_MESSAGE_TYPE){
+          content=item.messages[item.messages.length - 1].content
+        }else if(item.messages[item.messages.length - 1].chatMessageType === SUB_MESSAGE_TYPE){
+          content=item.messages[item.messages.length - 1].content.indexOf("-")!==-1?"":item.messages[item.messages.length - 1].content
+        }else if(item.messages[item.messages.length - 1].chatMessageType === IMAGE_CHAT_MESSAGE_TYPE){
+          content="图片"
+        }
+      }
+      return content
     }
   },
 }
@@ -161,12 +175,13 @@ export default {
 
     .avatar
       border-radius: 2px
-      margin-right: 12px
+
 
     .list-right
       position: relative
       flex: 1
       margin-top: 4px
+      margin-left: 10px
 
     .name
       display: inline-block

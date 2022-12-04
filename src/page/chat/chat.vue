@@ -39,6 +39,7 @@ import ChatInfoFriend from "../../components/info/chatinfofriend";
 import ChatInfoGroup from "../../components/info/chatinfogroup";
 import {groupMembers} from "../../apis/group";
 import {groupAnnouncement} from "../../apis/group_announcement";
+import {getFriendsByFromIdAndToId} from "../../apis/friend.api";
 
 export default {
   components: {
@@ -53,6 +54,7 @@ export default {
   computed: {
     ...mapGetters([
       'selectedChat',
+      'getUser'
     ]),
     ...mapState([
       'groupMembers',
@@ -75,14 +77,23 @@ export default {
     ]),
     openDrawer(){
       if(this.selectedChat.type===1) {
-        if (!this.groupMembers.hasOwnProperty(this.selectId)||!this.groupMembers[this.selectId].hasOwnProperty('xiuxianUsers')) {
-          this.drawer=false
-          this.getGroupMembers()
-          this.$message('群成员数据加载中，请等待加载完成提示出现后，可点击查看')
-        }else {
-          this.getAnnouncement(this.selectId)
-          this.drawer=!this.drawer
-        }
+        getFriendsByFromIdAndToId(this.getUser.xiuxianUserId,this.selectId).then(res => {
+          if(res.data.data!=null){
+            if(res.data.data){
+              if (!this.groupMembers.hasOwnProperty(this.selectId)||!this.groupMembers[this.selectId].hasOwnProperty('xiuxianUsers')) {
+                this.drawer=false
+                this.getGroupMembers()
+                this.$message('群成员数据加载中，请等待加载完成提示出现后，可点击查看')
+              }else {
+                this.getAnnouncement(this.selectId)
+                this.drawer=!this.drawer
+              }
+            }else {
+              this.$message.info('你已不在该群聊中')
+              this.drawer=false
+            }
+          }
+        })
       }else {
         this.drawer=!this.drawer
       }
@@ -92,7 +103,7 @@ export default {
       if (this.selectedChat.type === 1) {
         //先查看是否有该群组成员缓存，没有的话获取群成员
         if (!this.groupMembers.hasOwnProperty(this.selectId)||!this.groupMembers[this.selectId].hasOwnProperty('xiuxianUsers')) {
-          groupMembers(this.selectId).then(res => {
+          groupMembers(this.getUser.xiuxianUserId, this.selectId).then(res => {
             if (res.data.data != null) {
               this.setGroupMember(res.data.data)
               this.getAnnouncement(this.selectId)
@@ -117,8 +128,10 @@ export default {
       })
     },
     resetData(){
+      if(this.selectedChat.type===1){
+        this.$refs.chatInfoGroup.clearSearchText()
+      }
 
-      this.$refs.chatInfoGroup.clearSearchText()
     },
 
   }

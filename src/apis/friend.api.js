@@ -29,6 +29,19 @@ export function getFriendListItem(selfXiuxianId,friendXiuxianId){
   })
 }
 
+//获取单个groupList
+export function getGroupListItem(selfXiuxianId,friendXiuxianId){
+  return request({
+    url: '/xiuxian-chat/api/xiuxianfriendlist/group-list-item',
+    method: 'get',
+    params:{
+      // 具体传参（键）要看后台要求
+      "selfXiuxianId":selfXiuxianId,
+      "friendXiuxianId":friendXiuxianId
+    }
+  })
+}
+
 export function getGroupList(selfXiuxianId){
   return request({
     url: '/xiuxian-chat/api/xiuxianfriendlist/grouplist',
@@ -95,3 +108,6 @@ export function changeFriendsPermission(data){
     data:data
   })
 }
+
+
+

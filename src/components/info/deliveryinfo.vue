@@ -80,7 +80,7 @@ export default {
   },
   methods: {
     ...mapActions([
-      'selectFriend',
+      'selectFriend'
     ]),
     isFriend(xiuxianUserId) {
       let find = this.friendlist.find(friend => friend.friendXiuxianId === xiuxianUserId)

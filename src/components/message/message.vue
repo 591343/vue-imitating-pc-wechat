@@ -5,7 +5,9 @@
       <el-col :span="22">
         <div class="friendname">
           {{ selectedChat.remark === null || selectedChat.remark === '' ? selectedChat.nickname : selectedChat.remark }}
-          {{ selectedChat.hasOwnProperty('number') && selectedChat.number !== 0 ? '(' + selectedChat.number + ')' : '' }}
+          {{
+            selectedChat.hasOwnProperty('number') && selectedChat.number !== 0 ? '(' + selectedChat.number + ')' : ''
+          }}
         </div>
       </el-col>
       <el-col :span="2">
@@ -33,7 +35,8 @@
     <div class="message-wrapper" ref="list" v-if="selectedChat.type===0">
       <ul v-if="selectedChat">
         <li v-for="(item,i) in selectedChat.messages" v-show="showMessage(item)" class="message-item" :key="i">
-          <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
+          <div class="title" v-if="item.chatMessageType===2"><span>{{ item.content }}</span></div>
+          <div class="time" v-else><span>{{ selectedChat.messages[i].date | time }}</span></div>
           <div class="main" :class="{ self: item.self }">
             <el-popover
               popper-class="poppover"
@@ -71,11 +74,11 @@
 
       <ul v-if="selectedChat">
         <li v-for="(item,i) in selectedChat.messages" v-show="showMessage(item)" class="message-item" :key="i">
-          <div class="time"><span>{{ selectedChat.messages[i].date | time }}</span></div>
-
-          <div class="main" :class="{ self: item.self }" v-bind="userInfo">
+          <div class="title" v-if="item.chatMessageType===2">
+            <span>{{ item.content.indexOf("-") !== -1 ? showSubMessage(item.content, i) : item.content }}</span></div>
+          <div class="time" v-else><span>{{ selectedChat.messages[i].date | time }}</span></div>
+          <div class="main" v-if="item.chatMessageType!==2" :class="{ self: item.self }" v-bind="userInfo">
             <div class="name">{{ item.chatUser| showName }}</div>
-
             <el-popover
               popper-class="poppover"
               placement="right-end"
@@ -152,20 +155,26 @@
     </el-dialog>
 
     <!--群公告-->
-    <group-announcement  :dialogGroupAnnouncement.sync="dialogGroupAnnouncement"></group-announcement>
+    <group-announcement v-if="selectedChat.type===1"
+                        :dialogGroupAnnouncement.sync="dialogGroupAnnouncement"></group-announcement>
   </div>
 </template>
 
 <script>
-import {mapGetters, mapMutations, mapState} from 'vuex'
-import {groupPersonNumber, searchFriend} from "../../apis/search.api";
+import {mapActions, mapGetters, mapMutations, mapState} from 'vuex'
+import {searchFriend} from "../../apis/search.api";
 import deliveryinfo from "../info/deliveryinfo";
-import {ADD_FRIEND_NOTICE, WAITING_FOR_RECEIVE_STATUS} from "../../services/constant";
+import {
+  ADD_FRIEND_NOTICE, IMAGE_CHAT_MESSAGE_TYPE,
+  SUB_MESSAGE_GROUP_MEMBER_ADD, SUB_MESSAGE_GROUP_MEMBER_REMOVE, SUB_MESSAGE_TYPE,
+  TEXT_CHAT_MESSAGE_TYPE,
+  WAITING_FOR_RECEIVE_STATUS
+} from "../../services/constant";
 import {getFriendListItem, getFriendsByFromIdAndToId, sendAddFriend} from "../../apis/friend.api";
 import {getChatListItem} from "../../apis/chat.api";
 import Chatinfo from "../info/chatinfofriend";
 import GroupAnnouncement from "../info/groupannouncement";
-import {groupMembers} from "../../apis/group";
+import {groupMembers, getMemberName} from "../../apis/group";
 
 
 export default {
@@ -184,7 +193,7 @@ export default {
         permission: '0',
       },
       friendInfo: {},
-      dialogGroupAnnouncement:false,
+      dialogGroupAnnouncement: false,
 
     }
   },
@@ -192,7 +201,8 @@ export default {
     ...mapGetters([
       'selectedChat',
       'messages',
-      'selectedGroup'
+      'selectedGroup',
+      'getUser'
     ]),
     ...mapState([
       'user',
@@ -219,14 +229,17 @@ export default {
       'setGroupAnnouncementNotificationBarShowed',
       'setGroupMember'
     ]),
+    ...mapActions([
+      'actionSetChatMessage'
+    ]),
 
     //  在发送信息之后，将输入的内容中属于表情的部分替换成emoji图片标签
     //  再经过v-html 渲染成真正的图片
     replaceFace(con) {
 
       if (con.match(/\[.*?\]/g) != null) {
-        var emojis = this.emojis;
-        for (var i = 0; i < emojis.length; i++) {
+        const emojis = this.emojis;
+        for (let i = 0; i < emojis.length; i++) {
           let regExp = new RegExp("\\[" + emojis[i].title + "\\]", "g");
           con = con.replace(regExp, '<img src="static/emoji/' + emojis[i].file + '"  alt="" style="vertical-align: middle; width: 24px; height: 24px" />');
         }
@@ -235,10 +248,12 @@ export default {
       return con;
     },
     showMessage(item) {
-      if (item.chatMessageType === 0) {
+      if (item.chatMessageType === TEXT_CHAT_MESSAGE_TYPE) {
         return item.content !== null && item.content !== ''
-      } else {
+      } else if (item.chatMessageType === IMAGE_CHAT_MESSAGE_TYPE) {
         return item.remoteMediaUrl !== null && item.remoteMediaUrl !== ''
+      } else if (item.chatMessageType === SUB_MESSAGE_TYPE) {
+        return item.content
       }
     },
     getUserInfo(self, xiuxianUserId) {
@@ -249,6 +264,8 @@ export default {
           if (res.data.data != null) {
             this.$set(this.userInfo, "user_" + xiuxianUserId, res.data.data)
           }
+        }).catch(error => {
+          this.$message.error('服务器异常,请重试')
         })
       }
       console.log(this.userInfo)
@@ -342,7 +359,7 @@ export default {
       //如果为群组类型
       if (this.selectedChat.type === 1) {
         //先查看是否有该群组成员缓存，没有的话获取群成员
-        if (!this.groupMembers.hasOwnProperty(this.selectId)||!this.groupMembers[this.selectId].hasOwnProperty('xiuxianUsers')) {
+        if (!this.groupMembers.hasOwnProperty(this.selectId) || !this.groupMembers[this.selectId].hasOwnProperty('xiuxianUsers')) {
           groupMembers(this.selectId).then(res => {
             if (res.data.data != null) {
               this.setGroupMember(res.data.data)
@@ -350,24 +367,76 @@ export default {
                 message: '群成员数据加载完成,可点击查看',
                 type: 'success'
               });
-              this.dialogGroupAnnouncement=true
-              // this.$forceUpdate()
+              this.dialogGroupAnnouncement = true
             }
           })
           return
         }
-        this.dialogGroupAnnouncement=true
-        // this.$forceUpdate()
+        this.dialogGroupAnnouncement = true
       }
     },
-    showChatInfo() {
-      this.$refs.chatInfo.handlePack()
+    // 用于显示子消息内容
+    async showSubMessage(content, messageIndex) {
+      let split = content.split("-")
+
+      const subMessageFunctionType = parseInt(split[0])
+
+      let message = ''
+
+      if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_ADD || subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_REMOVE) {
+        if (split[1] === this.getUser.xiuxianUserId) {
+          const res = await getMemberName(this.getUser.xiuxianUserId, split[2], false)
+          if (res.data.data != null) {
+            if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_ADD) {
+              message = '你邀请"' + res.data.data + '"加入了群聊'
+            } else if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_REMOVE) {
+              message = '你将"' + res.data.data + '"移出了群聊'
+            }
+          }
+        } else if (split[2] === this.getUser.xiuxianUserId) {
+          const res = await getMemberName(this.getUser.xiuxianUserId, split[1], false)
+          if (res.data.data != null) {
+            if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_ADD) {
+              message = '你被"' + res.data.data + '"邀请加入了群聊'
+            } else if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_REMOVE) {
+              message = '你被"' + res.data.data + '"移出了群聊'
+            }
+          }
+        } else {
+          let name1 = ''
+          let name2 = ''
+          const res1 = await getMemberName(this.getUser.xiuxianUserId, split[1], false)
+          if (res1.data.data != null) {
+            name1 = res1.data.data
+          }
+          const res2 = await getMemberName(this.getUser.xiuxianUserId, split[2], false)
+          if (res2.data.data != null) {
+            name2 = res2.data.data
+          }
+          if (name1 != null && name2 != null) {
+            if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_ADD) {
+              message = '"' + name1 + '"邀请"' + name2 + '"加入了群聊'
+            } else if (subMessageFunctionType === SUB_MESSAGE_GROUP_MEMBER_REMOVE) {
+              message = '"' + name1 + '"将"' + name2 + '"移出了群聊'
+            }
+          }
+        }
+      }
+
+      if (message !== '') {
+        let value = {
+          selectId: this.selectId,
+          content: message,
+          index: messageIndex
+        }
+
+        this.actionSetChatMessage(value)
+      }
     }
   },
   filters: {
     // 将日期过滤为 hour:minutes
     time(date) {
-
       let timestamp = parseInt(date)
       if (typeof date === 'string') {
         let timestamp = parseInt(date);
@@ -451,6 +520,18 @@ export default {
 
     .message
       margin-bottom: 15px
+
+    .title
+      width: 100%
+      font-size: 12px
+      margin: 7px auto
+      text-align: center
+
+      span
+        display: inline-block
+        padding: 4px 6px
+        color: #adaeaf
+        border-radius: 3px
 
     .time
       width: 100%

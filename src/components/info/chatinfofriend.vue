@@ -5,14 +5,14 @@
       <el-row>
         <el-col :span="7">
           <div class="friend-avatar">
-            <img class="avatar" width="36" height="36"
+            <img class="avatar"
                  :src="selectedChat.profile">
             <div class="name">{{selectedChat.remark!=null&&selectedChat.remark!==''?selectedChat.remark:selectedChat.nickname}}</div>
           </div>
         </el-col>
         <el-col :span="17">
           <div class="add-to-group">
-            <img class="avatar" src="static/images/add.png" @click="dialogAddFriends=true">
+            <img class="avatar" style="height: 33px;width: 33px" src="static/images/add.png" @click="dialogAddFriends=true">
             <div class="add" >添加</div>
           </div>
         </el-col>
@@ -86,9 +86,6 @@ export default {
       functionType:ADD_FRIEND_FUNCTION
     }
   },
-  created() {
-    console.log('person create')
-  },
   computed: {
     ...mapGetters([
       'selectedChat',
@@ -159,7 +156,7 @@ export default {
         cursor: pointer
         width: 35px
         height: 35px
-
+        border: 1px solid #8a8a8a
       .add
         font-size: 10px
         margin-top: 5px

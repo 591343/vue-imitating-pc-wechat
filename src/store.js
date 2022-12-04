@@ -4,13 +4,12 @@ import router from './router'
 import storage from "./utils/storage";
 import {addChatList, sendGroupChat, sendSingleChat} from "./apis/chat.api";
 import {getFriendsByFromIdAndToId} from "./apis/friend.api";
-import {FRIEND_TYPE, GROUP_TYPE, TEXT_CHAT_MESSAGE_TYPE} from "./services/constant";
+import {FRIEND_TYPE, GROUP_TYPE, IMAGE_CHAT_MESSAGE_TYPE, TEXT_CHAT_MESSAGE_TYPE} from "./services/constant";
 
 
 Vue.use(Vuex)
 
-//获取当前时间
-const now = new Date();
+
 const state = {
   // 存储token
   token: "",
@@ -36,6 +35,9 @@ const state = {
   groupMembers: {},
   // 新的朋友列表
   newFriendList: [],
+
+  // 用于处理消息重复的集合，上线后就初始化，在接受消息的过程中，通过消息Id来判断是否重复，以此避免消息重复
+  messageRepeatSet:{},
 
   //emoji表情
   emojis: [
@@ -126,18 +128,55 @@ const mutations = {
       }
     }
   },
+  setGroupNumber(state,value){
+    for (let i = 0; i < state.friendlist.length; i++) {
+      if (state.friendlist[i].friendXiuxianId === value.xiuxianGroupId) {
+        Vue.set(state.friendlist[i], 'number', value.number)
+        break
+      }
+    }
+    for (let i = 0; i < state.chatlist.length; i++) {
+      if (state.chatlist[i].friendXiuxianId === value.xiuxianGroupId) {
+        Vue.set(state.chatlist[i], 'number', value.number)
+        break
+      }
+    }
+  },
   setGroupMember(state, value) {
     const xiuxianGroupId = value.xiuxianGroupId
     let announcement = undefined
-    if (state.groupMembers[xiuxianGroupId].hasOwnProperty('announcement')) {
+    if (state.groupMembers.hasOwnProperty(xiuxianGroupId) && state.groupMembers[xiuxianGroupId].hasOwnProperty('announcement')) {
       announcement = state.groupMembers[xiuxianGroupId].announcement
     }
     Vue.set(state.groupMembers, xiuxianGroupId, value)
     if (announcement !== undefined) {
       Vue.set(state.groupMembers[xiuxianGroupId], 'announcement', announcement)
     }
-
   },
+  addGroupMembers(state,value) {
+    const xiuxianGroupId = value.xiuxianGroupId
+    const membersList= value.membersList
+    let xiuxianUsers = state.groupMembers[xiuxianGroupId].xiuxianUsers
+    xiuxianUsers.push(...membersList)
+    Vue.set(state.groupMembers[xiuxianGroupId], 'xiuxianUsers', xiuxianUsers)
+  },
+
+  removeGroupMembers(state,value){
+    const xiuxianGroupId = value.xiuxianGroupId
+    const membersList= value.membersList
+    let xiuxianUsers = state.groupMembers[xiuxianGroupId].xiuxianUsers
+
+    if(xiuxianUsers!==undefined){
+      for(let i=xiuxianUsers.length-1;i>=0;i--){
+        if(membersList.indexOf(xiuxianUsers[i].xiuxianUserId)!==-1){
+          xiuxianUsers.splice(i,1)
+        }
+      }
+
+      Vue.set(state.groupMembers[xiuxianGroupId], 'xiuxianUsers', xiuxianUsers)
+    }
+  }
+  ,
   setGroupAnnouncement(state, value) {
     const xiuxianGroupId = value.xiuxianGroupId
     if (state.groupMembers[xiuxianGroupId] === undefined) {
@@ -155,8 +194,17 @@ const mutations = {
   setGroupAnnouncementNotificationBarShowed(state, value) {
     const xiuxianGroupId = value.xiuxianGroupId
     Vue.set(state.groupMembers[xiuxianGroupId].announcement, 'showed', value.showed)
-
   },
+
+  setChatMessage(state,value){
+    for(let i =0;i<state.chatlist.length;i++){
+      if(state.chatlist[i].friendXiuxianId===value.selectId){
+        Vue.set(state.chatlist[i].messages[value.index],'content',value.content)
+        break
+      }
+    }
+  },
+
 
   // 从localStorage 中获取数据
   initData(state) {
@@ -191,15 +239,8 @@ const mutations = {
   // 发送信息
   sendMessage(state, msg) {
     let result = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
-    if (result.type === 0) { //如果是单聊
-      getFriendsByFromIdAndToId(state.selectId, state.user.xiuxianUserId).then(res => {
-        if (res.data.data != null) {
-          if (!res.data.data) {  //不是朋友
-            Vue.prototype.$message.info("开启好友验证,你还不是他(她)好友")
-          }
-        }
-      })
-    }
+
+
     const timestamp = msg.timestamp
     let message = {
       content: msg.content === null ? "" : msg.content,
@@ -214,36 +255,54 @@ const mutations = {
       fromTime: timestamp,
       chatMessageType: msg.chatMessageType
     }
-    if (msg.chatMessageType === 0) {
+    if (msg.chatMessageType === TEXT_CHAT_MESSAGE_TYPE) {
       chatMessage.content = msg.content
-    } else if (msg.chatMessageType === 1) {
+    } else if (msg.chatMessageType === IMAGE_CHAT_MESSAGE_TYPE) {
       chatMessage.remoteMediaUrl = msg.remoteMediaUrl
     }
 
-    if (result.type === 0) {
-      sendSingleChat(chatMessage).then(res => {
-        console.log("单聊消息已被服务器接收到")
-      }).catch(error => {
-        this.$message.error(error)
+    if (result.type === FRIEND_TYPE) { //如果是单聊
+      getFriendsByFromIdAndToId(state.selectId, state.user.xiuxianUserId).then(res => {
+        if (res.data.data != null) {
+          if (!res.data.data) {  //不是朋友
+            Vue.prototype.$message.info("对方开启了好友验证,你还不是他(她)好友,请先发送验证请求,对方验证通过后,才能聊天")
+          }else {
+            sendSingleChat(chatMessage).then(res => {
+              console.log("单聊消息已被服务器接收到")
+            }).catch(error => {
+              this.$message.error(error)
+            })
+            result.messages.push(message)
+          }
+        }
       })
-    } else if (result.type === 1) {
-      let chatUser = {
-        xiuxianUserId: state.user.xiuxianUserId,
-        profile: state.user.profile,
-        nickname: state.user.nickname,
-      }
-      chatMessage.chatUser = chatUser
-      sendGroupChat(chatMessage).then(res => {
-        console.log("群聊消息已被服务器接收到")
-      }).catch(error => {
-        this.$message.error(error)
+    } else if (result.type === GROUP_TYPE) {
+      getFriendsByFromIdAndToId(state.user.xiuxianUserId,state.selectId).then(res => {
+        if (res.data.data != null) {
+          if(!res.data.data){ //不在群组中了
+            Vue.prototype.$message.info("你已不在该群聊中")
+          }else {
+            let chatUser = {
+              xiuxianUserId: state.user.xiuxianUserId,
+              profile: state.user.profile,
+              nickname: state.user.nickname,
+            }
+            chatMessage.chatUser = chatUser
+            sendGroupChat(chatMessage).then(res => {
+              console.log("群聊消息已被服务器接收到")
+            }).catch(error => {
+              this.$message.error(error)
+            })
+            message.chatUser = chatUser
+            result.messages.push(message)
+          }
+        }
       })
-      message.chatUser = chatUser
     }
-    result.messages.push(message);
   }
   ,
-  robotSendMessage(state, msg) {
+  robotSendMessage
+    (state, msg) {
     let result = state.chatlist.find(session => session.friendXiuxianId === state.selectId);
     setTimeout(() => {
       result.messages.push({
@@ -254,10 +313,11 @@ const mutations = {
         self: false
       });
     }, 500)
-  },
+  }
+  ,
 
-  // 选择好友后，点击发送信息。判断在聊天列表中是否有该好友，有的话跳到该好友对话。没有的话
-  // 添加该好友的对话 并置顶
+// 选择好友后，点击发送信息。判断在聊天列表中是否有该好友，有的话跳到该好友对话。没有的话
+// 添加该好友的对话 并置顶
   send(state) {
     const timestamp = new Date().getTime()
     let result = state.friendlist.find(friend => friend.friendXiuxianId === state.selectFriendId)
@@ -345,18 +405,22 @@ const mutations = {
       state.selectId = msg.friendXiuxianId
       router.push({path: '/chat'})
     }
-  },
+  }
+  ,
   setChatList(state, chatList) {
     state.chatlist = chatList
-  },
+  }
+  ,
   setFriendList(state, friendList) {
 
     state.friendlist = friendList
-  },
+  }
+  ,
   setNewFriendList(state, newFriendList) {
 
     state.newFriendList = newFriendList
-  },
+  }
+  ,
 }
 const getters = {
   getToken(state) {
@@ -379,9 +443,9 @@ const getters = {
   searchedFriendlist(state) {
     let friends = state.friendlist.filter(friends => {
       var res = false
-      if (friends.type === 0) {
+      if (friends.type === FRIEND_TYPE) {
         res = friends.nickname.includes(state.searchText)
-      } else if (friends.type === 1) {
+      } else if (friends.type === GROUP_TYPE) {
         res = friends.groupName.includes(state.searchText)
       }
 
@@ -395,15 +459,24 @@ const getters = {
   searchedFriends(state) {
     return state.friendlist.filter(friends => {
       var res = false
-      if (friends.type === 0) {
+      if (friends.type === FRIEND_TYPE) {
         res = friends.nickname.includes(state.friendSearchText)
-      } else if (friends.type === 1) {
-        res = friends.groupName.includes(state.friendSearchText)
       }
 
       if (friends.remark != null) {
         res = res || friends.remark.includes(state.friendSearchText)
       }
+      return res
+    })
+  },
+  //搜索群成员
+  searchedMembers(state) {
+    return state.groupMembers[state.selectId].xiuxianUsers.filter(member => {
+      var res = false
+      res = member.nickname.includes(state.friendSearchText)
+      // if (member.remark != null) {
+      //   res = res || member.remark.includes(state.friendSearchText)
+      // }
       return res
     })
   },
@@ -431,8 +504,7 @@ const getters = {
   },
 
   selectValidFriend(state) {
-    let friend = state.newFriendList.find(friend => friend.fromId === state.selectValidId);
-    return friend
+    return state.newFriendList.find(friend => friend.fromId === state.selectValidId)
   },
   // 根据修仙Id去在朋友列表中找到该朋友
 
@@ -460,7 +532,6 @@ const getters = {
           groupName: groupMember.groupName,
           xiuxianUsers: members
         }
-
         return group
       } else {
         let group = {
@@ -487,11 +558,20 @@ const actions = {
       commit('searchFriend', value)
     }, 100)
   },
+  searchMembers:({commit}, value) => {
+  setTimeout(() => {
+    commit('', value)
+  }, 100)
+},
   searchGroupMember: ({commit}, value) => {
     setTimeout(() => {
       commit('searchGroupMember', value)
     }, 100)
   },
+  actionSetChatMessage:({commit},value)=>commit('setChatMessage',value),
+  actionAddGroupMembers:({commit},value)=>commit('addGroupMembers',value),
+  actionSetGroupNumber: ({commit},value)=>commit('setGroupNumber',value),
+  actionRemoveGroupMembers: ({commit},value)=>commit('removeGroupMembers',value),
   selectSession: ({commit}, value) => commit('selectSession', value),
   selectFriend: ({commit}, value) => commit('selectFriend', value),
   sendMessage: ({commit}, msg) => commit('sendMessage', msg),

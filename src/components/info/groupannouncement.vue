@@ -1,5 +1,5 @@
 <template>
-  <div class="group-announcement">
+  <div class="group-announcement" v-if="selectedGroup!==null">
     <!--群公告dialog-->
     <el-dialog
       :visible.sync="dialogGroupAnnouncement"

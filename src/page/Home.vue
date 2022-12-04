@@ -39,7 +39,9 @@ export default {
         let chatList = res.data.data.chatList;
 
         chatList.sort(function (a, b) {
-          return b.messages[b.messages.length - 1].date - a.messages[a.messages.length - 1].date
+          let aTime=a.messages.length>0?a.messages[a.messages.length - 1].date:a.startTime
+          let bTime=b.messages.length>0?b.messages[b.messages.length - 1].date:b.startTime
+          return bTime - aTime
         })
         for (let i = 0; i < chatList.length; i++) {
           chatList[i].index = i + 1;
